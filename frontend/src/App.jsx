@@ -1,8 +1,19 @@
 import React from 'react'
 
-const App = () => {
+import FeaturesSection from './components/FeaturesSection'
+import WasteReportingApp from './components/WasteReportingApp'
+
+
+function App() {
   return (
-    <div className='text-3xl bg-amber-500'>App</div>
+    <div className="min-h-screen">
+      
+      <WasteReportingApp />
+      <FeaturesSection />
+     
+
+  
+    </div>
   )
 }
 
