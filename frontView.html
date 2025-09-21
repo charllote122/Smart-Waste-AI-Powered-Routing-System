@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title> 🛰️  Aerial Waste Detection System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        .feature-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 1px solid #e1e8ed;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        .feature-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .upload-area {
+            border: 3px dashed #3498db;
+            padding: 40px;
+            text-align: center;
+            border-radius: 15px;
+            background: #f8fafc;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: #2980b9;
+            background: #ecf0f1;
+        }
+        .upload-area.dragover {
+            border-color: #27ae60;
+            background: #d5f4e6;
+        }
+        input[type="file"] {
+            margin: 15px 0;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            width: 100%;
+        }
+        input[type="text"], input[type="url"] {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        input[type="text"]:focus, input[type="url"]:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        button {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        button:hover {
+            background: linear-gradient(45deg, #2980b9, #1f618d);
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .success {
+            background: linear-gradient(135deg, #d5f4e6, #a8e6cf);
+            border: 2px solid #27ae60;
+            color: #155724;
+        }
+        .error {
+            background: linear-gradient(135deg, #ffeaa7, #fab1a0);
+            border: 2px solid #e74c3c;
+            color: #721c24;
+        }
+        .prediction {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .confidence {
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+        .probabilities {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        .prob-item {
+            text-align: center;
+            flex: 1;
+            padding: 10px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 8px;
+            margin: 0 5px;
+        }
+        #preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 15px 0;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .stream-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .stream-controls-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .stream-status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        .streaming {
+            background: linear-gradient(135deg, #a8e6cf, #81c784);
+            color: #2e7d32;
+            border: 2px solid #4caf50;
+        }
+        .stopped {
+            background: linear-gradient(135deg, #ffcdd2, #ef9a9a);
+            color: #c62828;
+            border: 2px solid #f44336;
+        }
+        .connecting {
+            background: linear-gradient(135deg, #fff3e0, #ffcc02);
+            color: #ef6c00;
+            border: 2px solid #ff9800;
+        }
+        video {
+            width: 100%;
+            max-width: 400px;
+            height: 250px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #ecf0f1;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2980b9);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-item {
+            background: rgba(255,255,255,0.8);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        @media (max-width: 768px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            .stream-controls-row {
+                flex-direction: column;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1> 🛰️ Aerial Waste Detection System</h1>
+        <p style="text-align: center; color: #7f8c8d; font-size: 1.1rem; margin-bottom: 30px;">
+            Advanced AI-powered waste detection using multiple input methods and ensemble learning
+        </p>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-title">
+                    <span style="font-size: 1.5em;"> 📷 </span> Image Upload Analysis
+                </div>
+                <div class="upload-area" onclick="document.getElementById('imageFile').click()">
+                    <p style="font-size: 1.1rem; margin-bottom: 10px;">Drop an image here or click to select</p>
+                    <p style="color: #7f8c8d;">Supports JPG, PNG, GIF formats</p>
+                    <input type="file" id="imageFile" accept="image/*" onchange="previewImage()" style="display: none;">
+                </div>
+                <button onclick="uploadImage()"> 🔍 Analyze Image</button>
+                <img id="preview" style="display:none;">
+                <div id="uploadResult"></div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-title">
+                    <span style="font-size: 1.5em;"> 📹 </span> CCTV Stream Analysis
+                </div>
+                <div class="stream-controls">
+                    <input type="url" id="streamUrl" placeholder="Enter CCTV stream URL (e.g., rtsp://...)" value="rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov">
+                    <div class="stream-controls-row">
+                        <button onclick="startStream()"> ▶️ Start Analysis</button>
+                        <button onclick="stopStream()"> ⏹️ Stop Analysis</button>
+                        <button onclick="testStream()"> 🧪 Test Connection</button>
+                    </div>
+                </div>
+                <div id="streamStatus" class="stream-status stopped">Status: Ready to connect</div>
+                <div class="progress-bar" id="streamProgress" style="display:none;">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div id="streamResults"></div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-title">
+                    <span style="font-size: 1.5em;"> 🔬 </span> Multi-Scale Analysis
+                </div>
+                <p style="color: #7f8c8d; margin-bottom: 15px;">Upload an image for analysis at multiple resolutions</p>
+                <div class="upload-area" onclick="document.getElementById('multiscaleFile').click()">
+                    <p>Select image for multi-scale analysis</p>
+                    <input type="file" id="multiscaleFile" accept="image/*" onchange="previewMultiscale()" style="display: none;">
+                </div>
+                <div style="margin: 15px 0;">
+                    <label>
+                        <input type="checkbox" id="scale224" checked> 224x224 (Standard)
+                    </label><br>
+                    <label>
+                        <input type="checkbox" id="scale112" checked> 112x112 (Fine Details)
+                    </label><br>
+                    <label>
+                        <input type="checkbox" id="scale448" checked> 448x448 (Broad Context)
+                    </label>
+                </div>
+                <button onclick="analyzeMultiscale()"> 🔍 Multi-Scale Analysis</button>
+                <img id="multiscalePreview" style="display:none;">
+                <div id="multiscaleResult"></div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-title">
+                    <span style="font-size: 1.5em;"> 🎥 </span> Live Webcam Analysis
+                </div>
+                <video id="webcam" autoplay muted playsinline></video>
+                <div class="stream-controls-row" style="margin: 15px 0;">
+                    <button onclick="startWebcam()"> 📹 Start Camera</button>
+                    <button onclick="captureFrame()"> 📸 Capture & Analyze</button>
+                    <button onclick="toggleContinuous()"> 🔄 Continuous Mode</button>
+                    <button onclick="stopWebcam()"> ⏹️ Stop Camera</button>
+                </div>
+                <canvas id="canvas" style="display:none;"></canvas>
+                <div id="webcamResult"></div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-title">
+                    <span style="font-size: 1.5em;"> 🤖 </span> Ensemble Prediction
+                </div>
+                <p style="color: #7f8c8d; margin-bottom: 15px;">Get predictions from multiple AI models for maximum accuracy</p>
+                <div class="upload-area" onclick="document.getElementById('ensembleFile').click()">
+                    <p>Upload image for ensemble analysis</p>
+                    <input type="file" id="ensembleFile" accept="image/*" onchange="previewEnsemble()" style="display: none;">
+                </div>
+                <div style="margin: 15px 0;">
+                    <h4>Active Models:</h4>
+                    <label><input type="checkbox" id="modelEfficientNet" checked> EfficientNetB0</label><br>
+                    <label><input type="checkbox" id="modelResNet" checked> ResNet50</label><br>
+                    <label><input type="checkbox" id="modelMobileNet" checked> MobileNetV2</label><br>
+                </div>
+                <button onclick="runEnsemble()"> 🚀 Run Ensemble Analysis</button>
+                <img id="ensemblePreview" style="display:none;">
+                <div id="ensembleResult"></div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-title">
+                    <span style="font-size: 1.5em;"> 📊 </span> Real-time Statistics
+                </div>
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalImages">0</div>
+                        <div class="stat-label">Images Analyzed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="wasteDetected">0</div>
+                        <div class="stat-label">Waste Detected</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="avgConfidence">0%</div>
+                        <div class="stat-label">Avg. Confidence</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="detectionRate">0%</div>
+                        <div class="stat-label">Detection Rate</div>
+                    </div>
+                </div>
+                <button onclick="resetStats()"> 🔄 Reset Statistics</button>
+                <button onclick="exportStats()"> 📁 Export Data</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Global variables
+        let webcamStream = null;
+        let streamingInterval = null;
+        let continuousMode = false;
+        let stats = { totalImages: 0, wasteDetected: 0, confidenceSum: 0, detectionRate: 0 };
+
+        // Drag and drop functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            setupDragAndDrop();
+            updateStats();
+        });
+
+        function setupDragAndDrop() {
+            const uploadAreas = document.querySelectorAll('.upload-area');
+            uploadAreas.forEach(area => {
+                area.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.classList.add('dragover');
+                });
+                area.addEventListener('dragleave', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('dragover');
+                });
+                area.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('dragover');
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0) {
+                        const input = this.querySelector('input[type="file"]') || document.getElementById('imageFile');
+                        input.files = files;
+                        if (input.id === 'imageFile') previewImage();
+                        else if (input.id === 'multiscaleFile') previewMultiscale();
+                        else if (input.id === 'ensembleFile') previewEnsemble();
+                    }
+                });
+            });
+        }
+
+        // Image Upload Functions
+        function previewImage() {
+            const file = document.getElementById('imageFile').files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('preview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function uploadImage() {
+            const fileInput = document.getElementById('imageFile');
+            const file = fileInput.files[0];
+            if (!file) {
+                showNotification('Please select an image first', 'error');
+                return;
+            }
+            const formData = new FormData();
+            formData.append('image', file);
+            showLoading('uploadResult');
+            fetch('/analyze_image', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayResult('uploadResult', data);
+                updateStats(data);
+            })
+            .catch(error => displayError('uploadResult', error));
+        }
+
+        // CCTV Stream Functions
+        function startStream() {
+            const streamUrl = document.getElementById('streamUrl').value;
+            if (!streamUrl) {
+                showNotification('Please enter a stream URL', 'error');
+                return;
+            }
+            const statusEl = document.getElementById('streamStatus');
+            const progressEl = document.getElementById('streamProgress');
+            statusEl.innerHTML = 'Status: Connecting...';
+            statusEl.className = 'stream-status connecting';
+            progressEl.style.display = 'block';
+            // Simulate progress
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 20;
+                document.getElementById('progressFill').style.width = Math.min(progress, 90) + '%';
+            }, 500);
+            fetch('/analyze_stream', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({stream_url: streamUrl})
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(progressInterval);
+                document.getElementById('progressFill').style.width = '100%';
+                if (data.status === 'success') {
+                    statusEl.innerHTML = 'Status: Analysis Complete ✅ ';
+                    statusEl.className = 'stream-status streaming';
+                    displayStreamResults(data);
+                    updateStats(data);
+                } else {
+                    statusEl.innerHTML = 'Status: Error - ' + data.message;
+                    statusEl.className = 'stream-status stopped';
+                }
+                setTimeout(() => {
+                    progressEl.style.display = 'none';
+                    document.getElementById('progressFill').style.width = '0%';
+                }, 2000);
+            })
+            .catch(error => {
+                clearInterval(progressInterval);
+                statusEl.innerHTML = 'Status: Connection failed ❌ ';
+                statusEl.className = 'stream-status stopped';
+                progressEl.style.display = 'none';
+            });
+        }
+
+        function stopStream() {
+            document.getElementById('streamStatus').innerHTML = 'Status: Stopped ⏹️ ';
+            document.getElementById('streamStatus').className = 'stream-status stopped';
+        }
+
+        function testStream() {
+            const streamUrl = document.getElementById('streamUrl').value;
+            if (!streamUrl) {
+                showNotification('Please enter a stream URL', 'error');
+                return;
+            }
+            showNotification('Testing connection...', 'info');
+            fetch('/test_stream', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({stream_url: streamUrl})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showNotification('Stream connection successful! ✅ ', 'success');
+                } else {
+                    showNotification('Stream connection failed: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Connection test failed', 'error');
+            });
+        }
+
+        // Multi-scale Analysis Functions
+        function previewMultiscale() {
+            const file = document.getElementById('multiscaleFile').files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('multiscalePreview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function analyzeMultiscale() {
+            const file = document.getElementById('multiscaleFile').files[0];
+            if (!file) {
+                showNotification('Please select an image first', 'error');
+                return;
+            }
+            const scales = [];
+            if (document.getElementById('scale224').checked) scales.push('224');
+            if (document.getElementById('scale112').checked) scales.push('112');
+            if (document.getElementById('scale448').checked) scales.push('448');
+
+            if (scales.length === 0) {
+                showNotification('Please select at least one scale', 'error');
+                return;
+            }
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('scales', JSON.stringify(scales));
+            showLoading('multiscaleResult');
+            fetch('/analyze_multiscale', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayMultiscaleResult(data);
+                updateStats(data);
+            })
+            .catch(error => displayError('multiscaleResult', error));
+        }
+
+        // Webcam Functions
+        function startWebcam() {
+            navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: 640,
+                    height: 480,
+                    facingMode: 'environment'
+                }
+            })
+            .then(function(stream) {
+                webcamStream = stream;
+                document.getElementById('webcam').srcObject = stream;
+                showNotification('Camera started successfully! 📹 ', 'success');
+            })
+            .catch(function(error) {
+                showNotification('Error accessing webcam: ' + error.message, 'error');
+            });
+        }
+
+        function captureFrame() {
+            if (!webcamStream) {
+                showNotification('Please start the camera first', 'error');
+                return;
+            }
+            const video = document.getElementById('webcam');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+
+            canvas.toBlob(function(blob) {
+                const formData = new FormData();
+                formData.append('image', blob, 'webcam_capture.jpg');
+                showLoading('webcamResult');
+                fetch('/analyze_image', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    displayResult('webcamResult', data);
+                    updateStats(data);
+                })
+                .catch(error => displayError('webcamResult', error));
+            });
+        }
+
+        function toggleContinuous() {
+            if (!webcamStream) {
+                showNotification('Please start the camera first', 'error');
+                return;
+            }
+            continuousMode = !continuousMode;
+            if (continuousMode) {
+                showNotification('Continuous analysis started 🔄 ', 'success');
+                streamingInterval = setInterval(captureFrame, 3000); // Every 3 seconds
+            } else {
+                showNotification('Continuous analysis stopped', 'info');
+                if (streamingInterval) {
+                    clearInterval(streamingInterval);
+                    streamingInterval = null;
+                }
+            }
+        }
+
+        function stopWebcam() {
+            if (webcamStream) {
+                webcamStream.getTracks().forEach(track => track.stop());
+                webcamStream = null;
+                continuousMode = false;
+                if (streamingInterval) {
+                    clearInterval(streamingInterval);
+                    streamingInterval = null;
+                }
+                showNotification('Camera stopped', 'info');
+            }
+        }
+
+        // Ensemble Functions
+        function previewEnsemble() {
+            const file = document.getElementById('ensembleFile').files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('ensemblePreview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function runEnsemble() {
+            const file = document.getElementById('ensembleFile').files[0];
+            if (!file) {
+                showNotification('Please select an image first', 'error');
+                return;
+            }
+            const models = [];
+            if (document.getElementById('modelEfficientNet').checked) models.push('EfficientNetB0');
+            if (document.getElementById('modelResNet').checked) models.push('ResNet50');
+            if (document.getElementById('modelMobileNet').checked) models.push('MobileNetV2');
+
+            if (models.length === 0) {
+                showNotification('Please select at least one model', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('models', JSON.stringify(models));
+            showLoading('ensembleResult');
+            fetch('/analyze_ensemble', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayResult('ensembleResult', data);
+                updateStats(data);
+            })
+            .catch(error => displayError('ensembleResult', error));
+        }
+
+        // Helper functions
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.style.opacity = 0;
+                setTimeout(() => notification.remove(), 500);
+            }, 3000);
+        }
+
+        function showLoading(elementId) {
+            const resultDiv = document.getElementById(elementId);
+            resultDiv.innerHTML = '<div class="loading">Analyzing... Please wait.</div>';
+        }
+
+        function displayResult(elementId, data) {
+            const resultDiv = document.getElementById(elementId);
+            if (data.status === 'success') {
+                const probabilitiesHtml = Object.entries(data.probabilities).map(([key, value]) =>
+                    `<div class="prob-item">${key.replace('_', ' ').replace(/(^\w|\s\w)/g, (m) => m.toUpperCase())}<br>${(value * 100).toFixed(2)}%</div>`
+                ).join('');
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <p class="prediction">Predicted: ${data.prediction}</p>
+                        <p class="confidence">Confidence: ${(data.confidence * 100).toFixed(2)}%</p>
+                        <div class="probabilities">${probabilitiesHtml}</div>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `<div class="result error"><p>Error: ${data.message}</p></div>`;
+            }
+        }
+
+        function displayMultiscaleResult(data) {
+            const resultDiv = document.getElementById('multiscaleResult');
+            if (data.status === 'success') {
+                let html = '<div class="result success"><h4>Multi-Scale Analysis Results:</h4>';
+                for (const scale in data.predictions) {
+                    const prediction = data.predictions[scale];
+                    const probabilitiesHtml = Object.entries(prediction.probabilities).map(([key, value]) =>
+                        `<div class="prob-item">${key.replace('_', ' ').replace(/(^\w|\s\w)/g, (m) => m.toUpperCase())}<br>${(value * 100).toFixed(2)}%</div>`
+                    ).join('');
+                    html += `
+                        <div style="margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 10px;">
+                            <h5>Scale: ${scale}</h5>
+                            <p class="prediction">Predicted: ${prediction.prediction}</p>
+                            <p class="confidence">Confidence: ${(prediction.confidence * 100).toFixed(2)}%</p>
+                            <div class="probabilities">${probabilitiesHtml}</div>
+                        </div>
+                    `;
+                }
+                html += '</div>';
+                resultDiv.innerHTML = html;
+            } else {
+                resultDiv.innerHTML = `<div class="result error"><p>Error: ${data.message}</p></div>`;
+            }
+        }
+
+        function displayStreamResults(data) {
+            const resultDiv = document.getElementById('streamResults');
+            if (data.status === 'success') {
+                const summary = data.summary;
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <h4>Stream Analysis Summary</h4>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-value">${summary.total_frames_analyzed}</div>
+                                <div class="stat-label">Frames Analyzed</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${summary.waste_detected_frames}</div>
+                                <div class="stat-label">Waste Frames</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${(summary.average_waste_confidence * 100).toFixed(2)}%</div>
+                                <div class="stat-label">Avg Waste Confidence</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${(summary.waste_detection_rate * 100).toFixed(2)}%</div>
+                                <div class="stat-label">Waste Detection Rate</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function updateStats(data) {
+            if (data && data.status === 'success') {
+                let isWasteDetected = false;
+                let currentConfidence = 0;
+                
+                // For single image analysis
+                if (data.prediction) {
+                    stats.totalImages++;
+                    currentConfidence = data.confidence;
+                    if (data.prediction === 'Has Waste') {
+                        stats.wasteDetected++;
+                        isWasteDetected = true;
+                    }
+                }
+                
+                // For stream analysis
+                if (data.summary) {
+                    stats.totalImages += data.summary.total_frames_analyzed;
+                    stats.wasteDetected += data.summary.waste_detected_frames;
+                    currentConfidence = data.summary.average_waste_confidence;
+                }
+
+                // For multi-scale analysis
+                if (data.predictions) {
+                    for (const scale in data.predictions) {
+                        stats.totalImages++;
+                        const prediction = data.predictions[scale];
+                        if (prediction.prediction === 'Has Waste') {
+                            stats.wasteDetected++;
+                        }
+                    }
+                    // For simplicity, we'll just show the first prediction's confidence
+                    const firstScaleKey = Object.keys(data.predictions)[0];
+                    currentConfidence = data.predictions[firstScaleKey].confidence;
+                }
+                
+                // Update running average confidence
+                if (isWasteDetected) {
+                    stats.confidenceSum += currentConfidence;
+                }
+
+                document.getElementById('totalImages').textContent = stats.totalImages;
+                document.getElementById('wasteDetected').textContent = stats.wasteDetected;
+                if (stats.wasteDetected > 0) {
+                    const avgConf = (stats.confidenceSum / stats.wasteDetected) * 100;
+                    document.getElementById('avgConfidence').textContent = `${avgConf.toFixed(2)}%`;
+                } else {
+                    document.getElementById('avgConfidence').textContent = '0%';
+                }
+                const detectionRate = (stats.wasteDetected / stats.totalImages) * 100;
+                document.getElementById('detectionRate').textContent = `${detectionRate.toFixed(2)}%`;
+            }
+        }
+
+        function resetStats() {
+            stats = { totalImages: 0, wasteDetected: 0, confidenceSum: 0, detectionRate: 0 };
+            updateStats({});
+            showNotification('Statistics reset successfully', 'info');
+        }
+
+        function exportStats() {
+            const data = JSON.stringify(stats, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'waste_detection_stats.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showNotification('Statistics exported successfully!', 'success');
+        }
+    </script>
+</body>
+</html>
