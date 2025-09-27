@@ -1,6 +1,6 @@
 import React from 'react'
 
-import FeaturesSection from './components/FeaturesSection'
+
 import WasteReportingApp from './components/WasteReportingApp'
 
 
@@ -9,7 +9,7 @@ function App() {
     <div className="min-h-screen">
       
       <WasteReportingApp />
-      <FeaturesSection />
+      
      
 
   
