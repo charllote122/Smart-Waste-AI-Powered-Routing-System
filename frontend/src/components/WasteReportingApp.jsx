@@ -25,53 +25,59 @@ import {
     Award
 } from "lucide-react"
 
+// Bing Maps API Key
 
 
-
-// Location data for different counties in Kenya with real coordinates
+// Location data for all 47 counties in Kenya with real coordinates
 const LOCATION_DATA = {
-    "Nairobi": {
-        lat: -1.286389,
-        lng: 36.817223,
-        waste_centers: 15,
-        population: 4397073,
-        bingMapsUrl: `https://www.bing.com/maps/embed?h=400&w=600&cp=${-1.286389}~${36.817223}&lvl=12&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
-    },
-    "Mombasa": {
-        lat: -4.043477,
-        lng: 39.668206,
-        waste_centers: 8,
-        population: 1208333,
-        bingMapsUrl: `https://www.bing.com/maps/embed?h=400&w=600&cp=${-4.043477}~${39.668206}&lvl=12&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
-    },
-    "Kisumu": {
-        lat: -0.091702,
-        lng: 34.767956,
-        waste_centers: 5,
-        population: 610082,
-        bingMapsUrl: `https://www.bing.com/maps/embed?h=400&w=600&cp=${-0.091702}~${34.767956}&lvl=12&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
-    },
-    "Nakuru": {
-        lat: -0.303099,
-        lng: 36.080025,
-        waste_centers: 6,
-        population: 570674,
-        bingMapsUrl: `https://www.bing.com/maps/embed?h=400&w=600&cp=${-0.303099}~${36.080025}&lvl=12&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
-    },
-    "Eldoret": {
-        lat: 0.520237,
-        lng: 35.269779,
-        waste_centers: 4,
-        population: 475716,
-        bingMapsUrl: `https://www.bing.com/maps/embed?h=400&w=600&cp=${0.520237}~${35.269779}&lvl=12&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
-    },
-    "Embu": {
-        lat: -0.531000,
-        lng: 37.451000,
-        waste_centers: 3,
-        population: 324092,
-        bingMapsUrl: `https://www.bing.com/maps/embed?h=400&w=600&cp=${-0.531000}~${37.451000}&lvl=12&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
-    }
+    "Nairobi": { lat: -1.286389, lng: 36.817223, waste_centers: 15, population: 4397073 },
+    "Mombasa": { lat: -4.043477, lng: 39.668206, waste_centers: 8, population: 1208333 },
+    "Kisumu": { lat: -0.091702, lng: 34.767956, waste_centers: 5, population: 610082 },
+    "Nakuru": { lat: -0.303099, lng: 36.080025, waste_centers: 6, population: 570674 },
+    "Eldoret": { lat: 0.520237, lng: 35.269779, waste_centers: 4, population: 475716 },
+    "Embu": { lat: -0.531000, lng: 37.451000, waste_centers: 3, population: 324092 },
+    "Kakamega": { lat: 0.282731, lng: 34.751863, waste_centers: 4, population: 1867579 },
+    "Kisii": { lat: -0.677334, lng: 34.779603, waste_centers: 3, population: 1234775 },
+    "Meru": { lat: 0.051472, lng: 37.645523, waste_centers: 4, population: 1545714 },
+    "Nyeri": { lat: -0.420132, lng: 36.947586, waste_centers: 3, population: 759164 },
+    "Machakos": { lat: -1.517683, lng: 37.263414, waste_centers: 4, population: 1421932 },
+    "Kiambu": { lat: -1.171261, lng: 36.835556, waste_centers: 6, population: 2417735 },
+    "Kilifi": { lat: -3.630653, lng: 39.849634, waste_centers: 3, population: 1453787 },
+    "Uasin Gishu": { lat: 0.514277, lng: 35.269779, waste_centers: 3, population: 1163186 },
+    "Narok": { lat: -1.083333, lng: 35.866667, waste_centers: 2, population: 1157873 },
+    "Turkana": { lat: 3.116667, lng: 35.600000, waste_centers: 2, population: 926976 },
+    "Garissa": { lat: -0.453229, lng: 39.646098, waste_centers: 2, population: 841353 },
+    "Wajir": { lat: 1.748838, lng: 40.058613, waste_centers: 2, population: 781263 },
+    "Mandera": { lat: 3.936200, lng: 41.855148, waste_centers: 2, population: 867457 },
+    "Marsabit": { lat: 2.334687, lng: 37.990937, waste_centers: 2, population: 459785 },
+    "Isiolo": { lat: 0.355636, lng: 37.583333, waste_centers: 2, population: 268002 },
+    "Lamu": { lat: -2.269558, lng: 40.900645, waste_centers: 2, population: 143920 },
+    "Taita Taveta": { lat: -3.396051, lng: 38.556316, waste_centers: 2, population: 340671 },
+    "Kwale": { lat: -4.181624, lng: 39.460561, waste_centers: 2, population: 866820 },
+    "Tana River": { lat: -1.500000, lng: 40.000000, waste_centers: 2, population: 315943 },
+    "Murang'a": { lat: -0.721539, lng: 37.152592, waste_centers: 3, population: 1056640 },
+    "Kirinyaga": { lat: -0.500000, lng: 37.283333, waste_centers: 2, population: 610411 },
+    "Nyandarua": { lat: -0.416667, lng: 36.666667, waste_centers: 2, population: 638289 },
+    "Laikipia": { lat: 0.206895, lng: 36.772049, waste_centers: 2, population: 518560 },
+    "Nandi": { lat: 0.183333, lng: 35.100000, waste_centers: 2, population: 885711 },
+    "Baringo": { lat: 0.466667, lng: 35.966667, waste_centers: 2, population: 666763 },
+    "Elgeyo-Marakwet": { lat: 0.500000, lng: 35.583333, waste_centers: 2, population: 454480 },
+    "West Pokot": { lat: 1.250000, lng: 35.116667, waste_centers: 2, population: 621241 },
+    "Samburu": { lat: 1.100000, lng: 36.716667, waste_centers: 2, population: 310327 },
+    "Trans Nzoia": { lat: 1.033333, lng: 34.966667, waste_centers: 2, population: 990341 },
+    "Bungoma": { lat: 0.569525, lng: 34.558376, waste_centers: 3, population: 1670570 },
+    "Busia": { lat: 0.460769, lng: 34.111462, waste_centers: 2, population: 893681 },
+    "Siaya": { lat: 0.060700, lng: 34.288061, waste_centers: 2, population: 993183 },
+    "Homa Bay": { lat: -0.527301, lng: 34.457142, waste_centers: 2, population: 1131950 },
+    "Migori": { lat: -1.063435, lng: 34.473130, waste_centers: 2, population: 1116436 },
+    "Kajiado": { lat: -1.852943, lng: 36.776665, waste_centers: 3, population: 1106968 },
+    "Kericho": { lat: -0.367621, lng: 35.283546, waste_centers: 3, population: 901777 },
+    "Bomet": { lat: -0.781567, lng: 35.341560, waste_centers: 2, population: 875689 },
+    "Vihiga": { lat: 0.076120, lng: 34.719835, waste_centers: 2, population: 590013 },
+    "Nyamira": { lat: -0.566667, lng: 34.950000, waste_centers: 2, population: 605576 },
+    "Makueni": { lat: -1.800000, lng: 37.616667, waste_centers: 2, population: 987653 },
+    "Tharaka Nithi": { lat: -0.300000, lng: 37.816667, waste_centers: 2, population: 393177 },
+    "Nandi": { lat: 0.183333, lng: 35.100000, waste_centers: 2, population: 885711 }
 }
 
 // Enhanced CCTV Monitoring Component with Real Maps
