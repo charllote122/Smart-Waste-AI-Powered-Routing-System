@@ -25,8 +25,8 @@ import {
     Award
 } from "lucide-react"
 
-// Bing Maps API Key
-const BING_MAPS_API_KEY = "At1T1skI54B2HYX3Q8_fgUdOQBOM6FBt2YyKxc7LdwlS79wy51GxNZMpp4RuA_W4"
+
+
 
 // Location data for different counties in Kenya with real coordinates
 const LOCATION_DATA = {
