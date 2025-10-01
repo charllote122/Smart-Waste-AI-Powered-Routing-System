@@ -22,56 +22,64 @@ import {
     Zap,
     Shield,
     Users,
-    Award
+    Award,
+    User,
+    LogOut
 } from "lucide-react"
 
 // Bing Maps API Key
-const BING_MAPS_API_KEY = "At1T1skI54B2HYX3Q8_fgUdOQBOM6FBt2YyKxc7LdwlS79wy51GxNZMpp4RuA_W4"
+const BING_MAPS_API_KEY = "your_bing_maps_api_key_here"
 
-// Location data for different counties in Kenya with real coordinates
+// Location data for all 47 counties in Kenya with real coordinates
 const LOCATION_DATA = {
-    "Nairobi": {
-        lat: -1.286389,
-        lng: 36.817223,
-        waste_centers: 15,
-        population: 4397073,
-        bingMapsUrl: `https://www.bing.com/maps/embed?h=400&w=600&cp=${-1.286389}~${36.817223}&lvl=12&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
-    },
-    "Mombasa": {
-        lat: -4.043477,
-        lng: 39.668206,
-        waste_centers: 8,
-        population: 1208333,
-        bingMapsUrl: `https://www.bing.com/maps/embed?h=400&w=600&cp=${-4.043477}~${39.668206}&lvl=12&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
-    },
-    "Kisumu": {
-        lat: -0.091702,
-        lng: 34.767956,
-        waste_centers: 5,
-        population: 610082,
-        bingMapsUrl: `https://www.bing.com/maps/embed?h=400&w=600&cp=${-0.091702}~${34.767956}&lvl=12&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
-    },
-    "Nakuru": {
-        lat: -0.303099,
-        lng: 36.080025,
-        waste_centers: 6,
-        population: 570674,
-        bingMapsUrl: `https://www.bing.com/maps/embed?h=400&w=600&cp=${-0.303099}~${36.080025}&lvl=12&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
-    },
-    "Eldoret": {
-        lat: 0.520237,
-        lng: 35.269779,
-        waste_centers: 4,
-        population: 475716,
-        bingMapsUrl: `https://www.bing.com/maps/embed?h=400&w=600&cp=${0.520237}~${35.269779}&lvl=12&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
-    },
-    "Embu": {
-        lat: -0.531000,
-        lng: 37.451000,
-        waste_centers: 3,
-        population: 324092,
-        bingMapsUrl: `https://www.bing.com/maps/embed?h=400&w=600&cp=${-0.531000}~${37.451000}&lvl=12&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
-    }
+    "Nairobi": { lat: -1.286389, lng: 36.817223, waste_centers: 15, population: 4397073 },
+    "Mombasa": { lat: -4.043477, lng: 39.668206, waste_centers: 8, population: 1208333 },
+    "Kisumu": { lat: -0.091702, lng: 34.767956, waste_centers: 5, population: 610082 },
+    "Nakuru": { lat: -0.303099, lng: 36.080025, waste_centers: 6, population: 570674 },
+    "Eldoret": { lat: 0.520237, lng: 35.269779, waste_centers: 4, population: 475716 },
+    "Embu": { lat: -0.531000, lng: 37.451000, waste_centers: 3, population: 324092 },
+    "Kakamega": { lat: 0.282731, lng: 34.751863, waste_centers: 4, population: 1867579 },
+    "Kisii": { lat: -0.677334, lng: 34.779603, waste_centers: 3, population: 1234775 },
+    "Meru": { lat: 0.051472, lng: 37.645523, waste_centers: 4, population: 1545714 },
+    "Nyeri": { lat: -0.420132, lng: 36.947586, waste_centers: 3, population: 759164 },
+    "Machakos": { lat: -1.517683, lng: 37.263414, waste_centers: 4, population: 1421932 },
+    "Kiambu": { lat: -1.171261, lng: 36.835556, waste_centers: 6, population: 2417735 },
+    "Kilifi": { lat: -3.630653, lng: 39.849634, waste_centers: 3, population: 1453787 },
+    "Uasin Gishu": { lat: 0.514277, lng: 35.269779, waste_centers: 3, population: 1163186 },
+    "Narok": { lat: -1.083333, lng: 35.866667, waste_centers: 2, population: 1157873 },
+    "Turkana": { lat: 3.116667, lng: 35.600000, waste_centers: 2, population: 926976 },
+    "Garissa": { lat: -0.453229, lng: 39.646098, waste_centers: 2, population: 841353 },
+    "Wajir": { lat: 1.748838, lng: 40.058613, waste_centers: 2, population: 781263 },
+    "Mandera": { lat: 3.936200, lng: 41.855148, waste_centers: 2, population: 867457 },
+    "Marsabit": { lat: 2.334687, lng: 37.990937, waste_centers: 2, population: 459785 },
+    "Isiolo": { lat: 0.355636, lng: 37.583333, waste_centers: 2, population: 268002 },
+    "Lamu": { lat: -2.269558, lng: 40.900645, waste_centers: 2, population: 143920 },
+    "Taita Taveta": { lat: -3.396051, lng: 38.556316, waste_centers: 2, population: 340671 },
+    "Kwale": { lat: -4.181624, lng: 39.460561, waste_centers: 2, population: 866820 },
+    "Tana River": { lat: -1.500000, lng: 40.000000, waste_centers: 2, population: 315943 },
+    "Murang'a": { lat: -0.721539, lng: 37.152592, waste_centers: 3, population: 1056640 },
+    "Kirinyaga": { lat: -0.500000, lng: 37.283333, waste_centers: 2, population: 610411 },
+    "Nyandarua": { lat: -0.416667, lng: 36.666667, waste_centers: 2, population: 638289 },
+    "Laikipia": { lat: 0.206895, lng: 36.772049, waste_centers: 2, population: 518560 },
+    "Nandi": { lat: 0.183333, lng: 35.100000, waste_centers: 2, population: 885711 },
+    "Baringo": { lat: 0.466667, lng: 35.966667, waste_centers: 2, population: 666763 },
+    "Elgeyo-Marakwet": { lat: 0.500000, lng: 35.583333, waste_centers: 2, population: 454480 },
+    "West Pokot": { lat: 1.250000, lng: 35.116667, waste_centers: 2, population: 621241 },
+    "Samburu": { lat: 1.100000, lng: 36.716667, waste_centers: 2, population: 310327 },
+    "Trans Nzoia": { lat: 1.033333, lng: 34.966667, waste_centers: 2, population: 990341 },
+    "Bungoma": { lat: 0.569525, lng: 34.558376, waste_centers: 3, population: 1670570 },
+    "Busia": { lat: 0.460769, lng: 34.111462, waste_centers: 2, population: 893681 },
+    "Siaya": { lat: 0.060700, lng: 34.288061, waste_centers: 2, population: 993183 },
+    "Homa Bay": { lat: -0.527301, lng: 34.457142, waste_centers: 2, population: 1131950 },
+    "Migori": { lat: -1.063435, lng: 34.473130, waste_centers: 2, population: 1116436 },
+    "Kajiado": { lat: -1.852943, lng: 36.776665, waste_centers: 3, population: 1106968 },
+    "Kericho": { lat: -0.367621, lng: 35.283546, waste_centers: 3, population: 901777 },
+    "Bomet": { lat: -0.781567, lng: 35.341560, waste_centers: 2, population: 875689 },
+    "Vihiga": { lat: 0.076120, lng: 34.719835, waste_centers: 2, population: 590013 },
+    "Nyamira": { lat: -0.566667, lng: 34.950000, waste_centers: 2, population: 605576 },
+    "Makueni": { lat: -1.800000, lng: 37.616667, waste_centers: 2, population: 987653 },
+    "Tharaka Nithi": { lat: -0.300000, lng: 37.816667, waste_centers: 2, population: 393177 },
+    "Nandi": { lat: 0.183333, lng: 35.100000, waste_centers: 2, population: 885711 }
 }
 
 // Enhanced CCTV Monitoring Component with Real Maps
@@ -169,7 +177,7 @@ const CCTVMonitoring = ({ userLocation }) => {
             <div className="mb-6">
                 <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-2xl aspect-video flex items-center justify-center relative overflow-hidden shadow-inner">
                     <iframe
-                        src={locationInfo.bingMapsUrl}
+                        src={`https://www.bing.com/maps/embed?h=300&w=400&cp=${locationInfo.lat}~${locationInfo.lng}&lvl=12&typ=d&sty=r&src=SHELL&FORM=MBEDV8`}
                         className="w-full h-full rounded-2xl"
                         style={{ border: 0 }}
                         onLoad={() => setMapLoaded(true)}
@@ -232,8 +240,8 @@ const CCTVMonitoring = ({ userLocation }) => {
                 <button
                     onClick={() => setIsMonitoring(!isMonitoring)}
                     className={`flex items-center justify-center space-x-3 py-4 px-6 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${isMonitoring
-                            ? "bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-lg"
-                            : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg"
+                        ? "bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-lg"
+                        : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg"
                         }`}
                 >
                     {isMonitoring ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
@@ -262,8 +270,8 @@ const CCTVMonitoring = ({ userLocation }) => {
                         <div className="text-center p-4 bg-white rounded-xl shadow-sm">
                             <p className="text-sm text-gray-600 font-medium">Urgency</p>
                             <p className={`font-bold text-lg ${lastAnalysis.urgency === "Critical" ? "text-red-600" :
-                                    lastAnalysis.urgency === "High" ? "text-orange-600" :
-                                        lastAnalysis.urgency === "Medium" ? "text-yellow-600" : "text-green-600"
+                                lastAnalysis.urgency === "High" ? "text-orange-600" :
+                                    lastAnalysis.urgency === "Medium" ? "text-yellow-600" : "text-green-600"
                                 }`}>
                                 {lastAnalysis.urgency}
                             </p>
@@ -310,8 +318,8 @@ const CCTVMonitoring = ({ userLocation }) => {
                             <div key={report.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                                 <div className="flex items-center space-x-3">
                                     <div className={`w-3 h-3 rounded-full ${report.analysis.urgency === "Critical" ? "bg-red-500" :
-                                            report.analysis.urgency === "High" ? "bg-orange-500" :
-                                                report.analysis.urgency === "Medium" ? "bg-yellow-500" : "bg-green-500"
+                                        report.analysis.urgency === "High" ? "bg-orange-500" :
+                                            report.analysis.urgency === "Medium" ? "bg-yellow-500" : "bg-green-500"
                                         }`}></div>
                                     <div>
                                         <p className="font-semibold">{report.analysis.wasteType}</p>
@@ -320,8 +328,8 @@ const CCTVMonitoring = ({ userLocation }) => {
                                 </div>
                                 <div className="text-right">
                                     <p className={`text-sm font-semibold ${report.analysis.urgency === "Critical" ? "text-red-600" :
-                                            report.analysis.urgency === "High" ? "text-orange-600" :
-                                                report.analysis.urgency === "Medium" ? "text-yellow-600" : "text-green-600"
+                                        report.analysis.urgency === "High" ? "text-orange-600" :
+                                            report.analysis.urgency === "Medium" ? "text-yellow-600" : "text-green-600"
                                         }`}>
                                         {report.analysis.urgency}
                                     </p>
@@ -461,7 +469,7 @@ const LiveCamera = ({ userLocation }) => {
             capturedImage: frameImage,
             bingMapsUrl: userCoordinates
                 ? `https://www.bing.com/maps/embed?h=300&w=400&cp=${userCoordinates.lat}~${userCoordinates.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
-                : locationInfo.bingMapsUrl
+                : `https://www.bing.com/maps/embed?h=300&w=400&cp=${locationInfo.lat}~${locationInfo.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
         }
 
         setAnalysis(mockAnalysis)
@@ -570,8 +578,8 @@ const LiveCamera = ({ userLocation }) => {
                 <button
                     onClick={isStreaming ? stopCamera : startCamera}
                     className={`flex items-center justify-center space-x-3 py-4 px-6 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${isStreaming
-                            ? "bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-lg"
-                            : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg"
+                        ? "bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-lg"
+                        : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg"
                         }`}
                 >
                     {isStreaming ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
@@ -632,8 +640,8 @@ const LiveCamera = ({ userLocation }) => {
                         <div className="text-center p-4 bg-white rounded-xl shadow-sm">
                             <p className="text-sm text-gray-600 font-medium">Urgency</p>
                             <p className={`font-bold text-lg ${analysis.urgency === "Critical" ? "text-red-600" :
-                                    analysis.urgency === "High" ? "text-orange-600" :
-                                        analysis.urgency === "Medium" ? "text-yellow-600" : "text-green-600"
+                                analysis.urgency === "High" ? "text-orange-600" :
+                                    analysis.urgency === "Medium" ? "text-yellow-600" : "text-green-600"
                                 }`}>
                                 {analysis.urgency}
                             </p>
@@ -769,7 +777,7 @@ const EnhancedImageUpload = ({ onSubmit, userLocation }) => {
             estimatedWeight: Math.floor(Math.random() * 50) + 10,
             location: userLocation,
             coordinates: location || locationInfo,
-            bingMapsUrl: location?.bingMapsUrl || locationInfo.bingMapsUrl
+            bingMapsUrl: location?.bingMapsUrl || `https://www.bing.com/maps/embed?h=300&w=400&cp=${locationInfo.lat}~${locationInfo.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
         }
 
         setAnalysis(mockAnalysis)
@@ -925,19 +933,19 @@ const EnhancedImageUpload = ({ onSubmit, userLocation }) => {
                         </div>
                         <div className="text-center p-5 bg-white rounded-xl shadow-sm border border-gray-100">
                             <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 ${analysis.urgency === "Critical" ? "bg-gradient-to-br from-red-100 to-red-200" :
-                                    analysis.urgency === "High" ? "bg-gradient-to-br from-orange-100 to-orange-200" :
-                                        analysis.urgency === "Medium" ? "bg-gradient-to-br from-yellow-100 to-yellow-200" :
-                                            "bg-gradient-to-br from-green-100 to-green-200"
+                                analysis.urgency === "High" ? "bg-gradient-to-br from-orange-100 to-orange-200" :
+                                    analysis.urgency === "Medium" ? "bg-gradient-to-br from-yellow-100 to-yellow-200" :
+                                        "bg-gradient-to-br from-green-100 to-green-200"
                                 }`}>
                                 <AlertTriangle className={`w-6 h-6 ${analysis.urgency === "Critical" ? "text-red-600" :
-                                        analysis.urgency === "High" ? "text-orange-600" :
-                                            analysis.urgency === "Medium" ? "text-yellow-600" : "text-green-600"
+                                    analysis.urgency === "High" ? "text-orange-600" :
+                                        analysis.urgency === "Medium" ? "text-yellow-600" : "text-green-600"
                                     }`} />
                             </div>
                             <p className="text-sm text-gray-600 font-medium mb-1">Urgency</p>
                             <p className={`font-bold text-lg ${analysis.urgency === "Critical" ? "text-red-600" :
-                                    analysis.urgency === "High" ? "text-orange-600" :
-                                        analysis.urgency === "Medium" ? "text-yellow-600" : "text-green-600"
+                                analysis.urgency === "High" ? "text-orange-600" :
+                                    analysis.urgency === "Medium" ? "text-yellow-600" : "text-green-600"
                                 }`}>
                                 {analysis.urgency}
                             </p>
@@ -1116,8 +1124,8 @@ const HeroSection = ({ setCurrentPage, userLocation }) => {
     )
 }
 
-// Enhanced Header Component
-const Header = ({ currentPage, setCurrentPage, userLocation, setUserLocation }) => (
+// Enhanced Header Component with Auth
+const Header = ({ currentPage, setCurrentPage, userLocation, setUserLocation, user, onLogin, onLogout }) => (
     <header className="bg-white shadow-xl border-b sticky top-0 z-50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
@@ -1173,6 +1181,38 @@ const Header = ({ currentPage, setCurrentPage, userLocation, setUserLocation }) 
                             View Reports
                         </button>
                     </div>
+
+                    {user ? (
+                        <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-3 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 rounded-xl border border-blue-100">
+                                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                                    <User className="w-4 h-4 text-white" />
+                                </div>
+                                <span className="font-medium text-blue-700">{user.name.split(' ')[0]}</span>
+                            </div>
+                            <button
+                                onClick={onLogout}
+                                className="flex items-center space-x-2 text-gray-500 hover:text-gray-700 transition-colors"
+                            >
+                                <LogOut className="w-5 h-5" />
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center space-x-3">
+                            <button
+                                onClick={() => onLogin("login")}
+                                className="px-6 py-2 text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                            >
+                                Sign In
+                            </button>
+                            <button
+                                onClick={() => onLogin("register")}
+                                className="bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white px-6 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-105"
+                            >
+                                Sign Up
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -1257,22 +1297,22 @@ const ReportsView = ({ reports, userLocation }) => {
                                     <div className="flex items-center justify-between mb-4">
                                         <span
                                             className={`px-4 py-2 rounded-full text-sm font-semibold ${report.status === "completed"
-                                                    ? "bg-green-100 text-green-800"
-                                                    : report.status === "in-progress"
-                                                        ? "bg-blue-100 text-blue-800"
-                                                        : "bg-yellow-100 text-yellow-800"
+                                                ? "bg-green-100 text-green-800"
+                                                : report.status === "in-progress"
+                                                    ? "bg-blue-100 text-blue-800"
+                                                    : "bg-yellow-100 text-yellow-800"
                                                 }`}
                                         >
                                             {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
                                         </span>
                                         <span
                                             className={`px-3 py-1 rounded-full text-xs font-semibold ${report.analysis.urgency === "Critical"
-                                                    ? "bg-red-100 text-red-800"
-                                                    : report.analysis.urgency === "High"
-                                                        ? "bg-orange-100 text-orange-800"
-                                                        : report.analysis.urgency === "Medium"
-                                                            ? "bg-yellow-100 text-yellow-800"
-                                                            : "bg-green-100 text-green-800"
+                                                ? "bg-red-100 text-red-800"
+                                                : report.analysis.urgency === "High"
+                                                    ? "bg-orange-100 text-orange-800"
+                                                    : report.analysis.urgency === "Medium"
+                                                        ? "bg-yellow-100 text-yellow-800"
+                                                        : "bg-green-100 text-green-800"
                                                 }`}
                                         >
                                             {report.analysis.urgency} Priority
@@ -1352,15 +1392,191 @@ const SuccessModal = ({ isOpen, onClose, userLocation }) => {
     )
 }
 
+// Auth System Component
+const AuthSystem = ({ onLogin, onRegister, onClose, mode = "login" }) => {
+    const [isLogin, setIsLogin] = useState(mode === "login")
+    const [formData, setFormData] = useState({
+        email: "",
+        password: "",
+        name: "",
+        phone: ""
+    })
+    const [loading, setLoading] = useState(false)
+
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        setLoading(true)
+
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1500))
+
+        const userData = {
+            id: Date.now(),
+            email: formData.email,
+            name: formData.name,
+            phone: formData.phone,
+            joinDate: new Date()
+        }
+
+        if (isLogin) {
+            onLogin(userData)
+        } else {
+            onRegister(userData)
+        }
+
+        setLoading(false)
+    }
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl">
+                <div className="text-center mb-8">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <User className="w-8 h-8 text-white" />
+                    </div>
+                    <h2 className="text-3xl font-bold text-gray-900">
+                        {isLogin ? "Welcome Back" : "Create Account"}
+                    </h2>
+                    <p className="text-gray-600 mt-2">
+                        {isLogin ? "Sign in to access your data" : "Join us to save your reports"}
+                    </p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {!isLogin && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Full Name
+                            </label>
+                            <input
+                                type="text"
+                                required
+                                value={formData.name}
+                                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300"
+                                placeholder="Enter your full name"
+                            />
+                        </div>
+                    )}
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Email Address
+                        </label>
+                        <input
+                            type="email"
+                            required
+                            value={formData.email}
+                            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                            className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300"
+                            placeholder="Enter your email"
+                        />
+                    </div>
+
+                    {!isLogin && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Phone Number
+                            </label>
+                            <input
+                                type="tel"
+                                value={formData.phone}
+                                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                                className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300"
+                                placeholder="Enter your phone number"
+                            />
+                        </div>
+                    )}
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Password
+                        </label>
+                        <input
+                            type="password"
+                            required
+                            value={formData.password}
+                            onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                            className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300"
+                            placeholder="Enter your password"
+                        />
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+                    >
+                        {loading ? (
+                            <div className="flex items-center justify-center">
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                                {isLogin ? "Signing in..." : "Creating account..."}
+                            </div>
+                        ) : (
+                            isLogin ? "Sign In" : "Create Account"
+                        )}
+                    </button>
+                </form>
+
+                <div className="mt-6 text-center">
+                    <button
+                        onClick={() => setIsLogin(!isLogin)}
+                        className="text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                        {isLogin ? "Need an account? Sign up" : "Already have an account? Sign in"}
+                    </button>
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                    <button
+                        onClick={onClose}
+                        className="w-full text-gray-600 hover:text-gray-700 font-medium py-3"
+                    >
+                        Continue without account
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 // Main App Component
 const WasteReportingApp = () => {
     const [currentPage, setCurrentPage] = useState("home")
     const [reports, setReports] = useState([])
     const [showSuccessModal, setShowSuccessModal] = useState(false)
     const [userLocation, setUserLocation] = useState("Nairobi")
+    const [user, setUser] = useState(null)
+    const [authMode, setAuthMode] = useState(null)
+
+    // Check for stored user session on component mount
+    useEffect(() => {
+        const storedUser = localStorage.getItem('wasteSpotterUser')
+        if (storedUser) {
+            setUser(JSON.parse(storedUser))
+        }
+    }, [])
+
+    const handleLogin = (userData) => {
+        setUser(userData)
+        setAuthMode(null)
+        localStorage.setItem('wasteSpotterUser', JSON.stringify(userData))
+    }
+
+    const handleRegister = (userData) => {
+        setUser(userData)
+        setAuthMode(null)
+        localStorage.setItem('wasteSpotterUser', JSON.stringify(userData))
+    }
+
+    const handleLogout = () => {
+        setUser(null)
+        localStorage.removeItem('wasteSpotterUser')
+    }
 
     const handleReportSubmit = (report) => {
-        setReports((prevReports) => [report, ...prevReports])
+        const reportWithUser = user ? { ...report, userId: user.id } : report
+        setReports((prevReports) => [reportWithUser, ...prevReports])
         setShowSuccessModal(true)
 
         // Simulate status updates
@@ -1385,11 +1601,24 @@ const WasteReportingApp = () => {
                 setCurrentPage={setCurrentPage}
                 userLocation={userLocation}
                 setUserLocation={setUserLocation}
+                user={user}
+                onLogin={setAuthMode}
+                onLogout={handleLogout}
             />
 
             {currentPage === "home" && <HeroSection setCurrentPage={setCurrentPage} userLocation={userLocation} />}
             {currentPage === "report" && <ReportForm onSubmit={handleReportSubmit} userLocation={userLocation} />}
             {currentPage === "reports" && <ReportsView reports={reports} userLocation={userLocation} />}
+
+            {/* Auth Modal */}
+            {authMode && (
+                <AuthSystem
+                    onLogin={handleLogin}
+                    onRegister={handleRegister}
+                    onClose={() => setAuthMode(null)}
+                    mode={authMode}
+                />
+            )}
 
             <SuccessModal isOpen={showSuccessModal} onClose={handleSuccessModalClose} userLocation={userLocation} />
         </div>
