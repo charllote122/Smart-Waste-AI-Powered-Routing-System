@@ -28,78 +28,65 @@ import {
 } from "lucide-react"
 
 // Bing Maps API Key
-const BING_MAPS_API_KEY = "your_bing_maps_api_key_here"
 
-// Location data for all 47 counties in Kenya with real coordinates
-const LOCATION_DATA = {
-    "Nairobi": { lat: -1.286389, lng: 36.817223, waste_centers: 15, population: 4397073 },
-    "Mombasa": { lat: -4.043477, lng: 39.668206, waste_centers: 8, population: 1208333 },
-    "Kisumu": { lat: -0.091702, lng: 34.767956, waste_centers: 5, population: 610082 },
-    "Nakuru": { lat: -0.303099, lng: 36.080025, waste_centers: 6, population: 570674 },
-    "Eldoret": { lat: 0.520237, lng: 35.269779, waste_centers: 4, population: 475716 },
-    "Embu": { lat: -0.531000, lng: 37.451000, waste_centers: 3, population: 324092 },
-    "Kakamega": { lat: 0.282731, lng: 34.751863, waste_centers: 4, population: 1867579 },
-    "Kisii": { lat: -0.677334, lng: 34.779603, waste_centers: 3, population: 1234775 },
-    "Meru": { lat: 0.051472, lng: 37.645523, waste_centers: 4, population: 1545714 },
-    "Nyeri": { lat: -0.420132, lng: 36.947586, waste_centers: 3, population: 759164 },
-    "Machakos": { lat: -1.517683, lng: 37.263414, waste_centers: 4, population: 1421932 },
-    "Kiambu": { lat: -1.171261, lng: 36.835556, waste_centers: 6, population: 2417735 },
-    "Kilifi": { lat: -3.630653, lng: 39.849634, waste_centers: 3, population: 1453787 },
-    "Uasin Gishu": { lat: 0.514277, lng: 35.269779, waste_centers: 3, population: 1163186 },
-    "Narok": { lat: -1.083333, lng: 35.866667, waste_centers: 2, population: 1157873 },
-    "Turkana": { lat: 3.116667, lng: 35.600000, waste_centers: 2, population: 926976 },
-    "Garissa": { lat: -0.453229, lng: 39.646098, waste_centers: 2, population: 841353 },
-    "Wajir": { lat: 1.748838, lng: 40.058613, waste_centers: 2, population: 781263 },
-    "Mandera": { lat: 3.936200, lng: 41.855148, waste_centers: 2, population: 867457 },
-    "Marsabit": { lat: 2.334687, lng: 37.990937, waste_centers: 2, population: 459785 },
-    "Isiolo": { lat: 0.355636, lng: 37.583333, waste_centers: 2, population: 268002 },
-    "Lamu": { lat: -2.269558, lng: 40.900645, waste_centers: 2, population: 143920 },
-    "Taita Taveta": { lat: -3.396051, lng: 38.556316, waste_centers: 2, population: 340671 },
-    "Kwale": { lat: -4.181624, lng: 39.460561, waste_centers: 2, population: 866820 },
-    "Tana River": { lat: -1.500000, lng: 40.000000, waste_centers: 2, population: 315943 },
-    "Murang'a": { lat: -0.721539, lng: 37.152592, waste_centers: 3, population: 1056640 },
-    "Kirinyaga": { lat: -0.500000, lng: 37.283333, waste_centers: 2, population: 610411 },
-    "Nyandarua": { lat: -0.416667, lng: 36.666667, waste_centers: 2, population: 638289 },
-    "Laikipia": { lat: 0.206895, lng: 36.772049, waste_centers: 2, population: 518560 },
-    "Nandi": { lat: 0.183333, lng: 35.100000, waste_centers: 2, population: 885711 },
-    "Baringo": { lat: 0.466667, lng: 35.966667, waste_centers: 2, population: 666763 },
-    "Elgeyo-Marakwet": { lat: 0.500000, lng: 35.583333, waste_centers: 2, population: 454480 },
-    "West Pokot": { lat: 1.250000, lng: 35.116667, waste_centers: 2, population: 621241 },
-    "Samburu": { lat: 1.100000, lng: 36.716667, waste_centers: 2, population: 310327 },
-    "Trans Nzoia": { lat: 1.033333, lng: 34.966667, waste_centers: 2, population: 990341 },
-    "Bungoma": { lat: 0.569525, lng: 34.558376, waste_centers: 3, population: 1670570 },
-    "Busia": { lat: 0.460769, lng: 34.111462, waste_centers: 2, population: 893681 },
-    "Siaya": { lat: 0.060700, lng: 34.288061, waste_centers: 2, population: 993183 },
-    "Homa Bay": { lat: -0.527301, lng: 34.457142, waste_centers: 2, population: 1131950 },
-    "Migori": { lat: -1.063435, lng: 34.473130, waste_centers: 2, population: 1116436 },
-    "Kajiado": { lat: -1.852943, lng: 36.776665, waste_centers: 3, population: 1106968 },
-    "Kericho": { lat: -0.367621, lng: 35.283546, waste_centers: 3, population: 901777 },
-    "Bomet": { lat: -0.781567, lng: 35.341560, waste_centers: 2, population: 875689 },
-    "Vihiga": { lat: 0.076120, lng: 34.719835, waste_centers: 2, population: 590013 },
-    "Nyamira": { lat: -0.566667, lng: 34.950000, waste_centers: 2, population: 605576 },
-    "Makueni": { lat: -1.800000, lng: 37.616667, waste_centers: 2, population: 987653 },
-    "Tharaka Nithi": { lat: -0.300000, lng: 37.816667, waste_centers: 2, population: 393177 },
-    "Nandi": { lat: 0.183333, lng: 35.100000, waste_centers: 2, population: 885711 }
-}
-
-// Enhanced CCTV Monitoring Component with Real Maps
-const CCTVMonitoring = ({ userLocation }) => {
+// Enhanced CCTV Monitoring Component with Current Location
+const CCTVMonitoring = ({ onReportSubmit }) => {
     const [isMonitoring, setIsMonitoring] = useState(false)
     const [selectedCamera, setSelectedCamera] = useState("Camera 1")
     const [countdown, setCountdown] = useState(600)
     const [reports, setReports] = useState([])
     const [lastAnalysis, setLastAnalysis] = useState(null)
     const [mapLoaded, setMapLoaded] = useState(false)
+    const [userCoordinates, setUserCoordinates] = useState(null)
+    const [locationError, setLocationError] = useState(null)
+    const [showSubmitButton, setShowSubmitButton] = useState(false)
 
-    const locationInfo = LOCATION_DATA[userLocation] || LOCATION_DATA["Nairobi"]
     const cameras = [
-        `Camera 1 - ${userLocation} CBD`,
-        `Camera 2 - ${userLocation} Market`,
-        `Camera 3 - ${userLocation} Residential`,
-        `Camera 4 - ${userLocation} Industrial`
+        "Camera 1 - CBD Area",
+        "Camera 2 - Market Zone",
+        "Camera 3 - Residential Sector",
+        "Camera 4 - Industrial District"
     ]
 
+    // Get user's current location
+    const getCurrentLocation = useCallback(() => {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error("Geolocation is not supported"))
+                return
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const coords = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    }
+                    setUserCoordinates(coords)
+                    setLocationError(null)
+                    resolve(coords)
+                },
+                (error) => {
+                    const errorMsg = `Location access denied. Please enable location services.`
+                    setLocationError(errorMsg)
+                    reject(new Error(errorMsg))
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
+                }
+            )
+        })
+    }, [])
+
     useEffect(() => {
+        // Get initial location
+        getCurrentLocation().catch(() => {
+            // Silently handle initial failure
+        })
+
         let interval
         if (isMonitoring && countdown > 0) {
             interval = setInterval(() => {
@@ -113,9 +100,20 @@ const CCTVMonitoring = ({ userLocation }) => {
             }, 1000)
         }
         return () => clearInterval(interval)
-    }, [isMonitoring, countdown])
+    }, [isMonitoring, countdown, getCurrentLocation])
 
-    const generateAutomaticReport = () => {
+    const generateAutomaticReport = async () => {
+        // Get fresh location for each report
+        let currentCoords = userCoordinates
+        if (!currentCoords) {
+            try {
+                currentCoords = await getCurrentLocation()
+            } catch (error) {
+                setLocationError("Cannot generate report without location access")
+                return
+            }
+        }
+
         const wasteTypes = ["Mixed Waste", "Organic", "Plastic", "Paper", "Glass"]
         const urgencyLevels = ["Low", "Medium", "High", "Critical"]
 
@@ -134,12 +132,30 @@ const CCTVMonitoring = ({ userLocation }) => {
             timestamp: new Date(),
             analysis,
             type: "automatic",
-            location: userLocation,
-            coordinates: locationInfo
+            coordinates: currentCoords,
+            bingMapsUrl: `https://www.bing.com/maps/embed?h=300&w=400&cp=${currentCoords.lat}~${currentCoords.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
         }
 
         setReports((prev) => [newReport, ...prev.slice(0, 9)])
         setLastAnalysis(analysis)
+        setShowSubmitButton(true)
+    }
+
+    const handleSubmitReport = () => {
+        if (lastAnalysis && userCoordinates && onReportSubmit) {
+            const report = {
+                id: Date.now(),
+                timestamp: new Date(),
+                analysis: lastAnalysis,
+                type: "cctv",
+                location: userCoordinates,
+                camera: selectedCamera,
+                status: "pending"
+            }
+            onReportSubmit(report)
+            setShowSubmitButton(false)
+            setLastAnalysis(null)
+        }
     }
 
     const formatTime = (seconds) => {
@@ -163,7 +179,7 @@ const CCTVMonitoring = ({ userLocation }) => {
                     </div>
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900">CCTV Monitoring</h2>
-                        <p className="text-sm text-gray-500">{userLocation} County - {locationInfo.waste_centers} cameras</p>
+                        <p className="text-sm text-gray-500">Real-time Location Tracking</p>
                     </div>
                 </div>
                 <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-full">
@@ -173,53 +189,58 @@ const CCTVMonitoring = ({ userLocation }) => {
                 </div>
             </div>
 
-            {/* Real Bing Maps Integration */}
+            {/* Real Bing Maps Integration with Current Location */}
             <div className="mb-6">
                 <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-2xl aspect-video flex items-center justify-center relative overflow-hidden shadow-inner">
-                    <iframe
-                        src={`https://www.bing.com/maps/embed?h=300&w=400&cp=${locationInfo.lat}~${locationInfo.lng}&lvl=12&typ=d&sty=r&src=SHELL&FORM=MBEDV8`}
-                        className="w-full h-full rounded-2xl"
-                        style={{ border: 0 }}
-                        onLoad={() => setMapLoaded(true)}
-                        allowFullScreen
-                        loading="lazy"
-                        referrerPolicy="no-referrer-when-downgrade"
-                    ></iframe>
-                    {!mapLoaded && (
+                    {userCoordinates ? (
+                        <iframe
+                            src={`https://www.bing.com/maps/embed?h=300&w=400&cp=${userCoordinates.lat}~${userCoordinates.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`}
+                            className="w-full h-full rounded-2xl"
+                            style={{ border: 0 }}
+                            onLoad={() => setMapLoaded(true)}
+                            allowFullScreen
+                            loading="lazy"
+                            referrerPolicy="no-referrer-when-downgrade"
+                        ></iframe>
+                    ) : (
+                        <div className="text-center text-white">
+                            <MapPin className="w-12 h-12 mx-auto mb-4 text-blue-400" />
+                            <p>Waiting for location access...</p>
+                            <button
+                                onClick={getCurrentLocation}
+                                className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
+                            >
+                                Enable Location
+                            </button>
+                        </div>
+                    )}
+                    {!mapLoaded && userCoordinates && (
                         <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
                             <div className="text-white text-center">
                                 <MapPin className="w-12 h-12 mx-auto mb-4 text-blue-400" />
-                                <p>Loading {userLocation} Map...</p>
+                                <p>Loading Current Location Map...</p>
                             </div>
                         </div>
                     )}
                     <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg text-sm">
-                        📍 {userLocation} County
+                        📍 Current Location
                     </div>
+                    {userCoordinates && (
+                        <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded-lg text-xs">
+                            📍 {userCoordinates.lat.toFixed(4)}, {userCoordinates.lng.toFixed(4)}
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Location Stats */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-xl">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-blue-600 font-medium">Population</p>
-                            <p className="text-xl font-bold text-blue-900">{locationInfo.population.toLocaleString()}</p>
-                        </div>
-                        <Users className="w-8 h-8 text-blue-500" />
+            {locationError && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+                    <div className="flex items-center">
+                        <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
+                        <p className="text-red-700 text-sm">{locationError}</p>
                     </div>
                 </div>
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-green-600 font-medium">Waste Centers</p>
-                            <p className="text-xl font-bold text-green-900">{locationInfo.waste_centers}</p>
-                        </div>
-                        <Trash2 className="w-8 h-8 text-green-500" />
-                    </div>
-                </div>
-            </div>
+            )}
 
             <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-700 mb-3">Select Camera</label>
@@ -282,7 +303,7 @@ const CCTVMonitoring = ({ userLocation }) => {
                         </div>
                         <div className="text-center p-4 bg-white rounded-xl shadow-sm">
                             <p className="text-sm text-gray-600 font-medium">Location</p>
-                            <p className="font-bold text-lg text-gray-900">{userLocation}</p>
+                            <p className="font-bold text-lg text-gray-900">Current Position</p>
                         </div>
                     </div>
                     <div className="mb-4">
@@ -297,6 +318,17 @@ const CCTVMonitoring = ({ userLocation }) => {
                             ></div>
                         </div>
                     </div>
+
+                    {/* SUBMIT BUTTON FOR CCTV */}
+                    {showSubmitButton && (
+                        <button
+                            onClick={handleSubmitReport}
+                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg mt-6 flex items-center justify-center space-x-3"
+                        >
+                            <Upload className="w-6 h-6" />
+                            <span>Submit CCTV Report</span>
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -345,7 +377,7 @@ const CCTVMonitoring = ({ userLocation }) => {
 }
 
 // Enhanced Live Camera Component with Real Location Services
-const LiveCamera = ({ userLocation }) => {
+const LiveCamera = ({ onReportSubmit }) => {
     const [isStreaming, setIsStreaming] = useState(false)
     const [isAnalyzing, setIsAnalyzing] = useState(false)
     const [analysis, setAnalysis] = useState(null)
@@ -353,27 +385,49 @@ const LiveCamera = ({ userLocation }) => {
     const [deviceId, setDeviceId] = useState(null)
     const [devices, setDevices] = useState([])
     const [userCoordinates, setUserCoordinates] = useState(null)
+    const [locationError, setLocationError] = useState(null)
+    const [showSubmitButton, setShowSubmitButton] = useState(false)
     const videoRef = useRef(null)
     const canvasRef = useRef(null)
 
-    const locationInfo = LOCATION_DATA[userLocation] || LOCATION_DATA["Nairobi"]
+    // Get user's current location
+    const getCurrentLocation = useCallback(() => {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error("Geolocation is not supported"))
+                return
+            }
 
-    useEffect(() => {
-        // Get user's current location
-        if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    setUserCoordinates({
+                    const coords = {
                         lat: position.coords.latitude,
                         lng: position.coords.longitude,
                         accuracy: position.coords.accuracy
-                    })
+                    }
+                    setUserCoordinates(coords)
+                    setLocationError(null)
+                    resolve(coords)
                 },
-                () => {
-                    setUserCoordinates(locationInfo)
+                (error) => {
+                    const errorMsg = `Location access denied. Please enable location services.`
+                    setLocationError(errorMsg)
+                    reject(new Error(errorMsg))
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
                 }
             )
-        }
+        })
+    }, [])
+
+    useEffect(() => {
+        // Get initial location
+        getCurrentLocation().catch(() => {
+            // Silently handle initial failure
+        })
 
         // Enumerate camera devices
         navigator.mediaDevices.enumerateDevices()
@@ -385,11 +439,14 @@ const LiveCamera = ({ userLocation }) => {
                 }
             })
             .catch(err => console.log('Error enumerating devices:', err))
-    }, [locationInfo])
+    }, [getCurrentLocation])
 
     const startCamera = async () => {
         try {
             setCameraError(null)
+            // Get fresh location when starting camera
+            await getCurrentLocation()
+
             const constraints = {
                 video: {
                     deviceId: deviceId ? { exact: deviceId } : undefined,
@@ -422,6 +479,7 @@ const LiveCamera = ({ userLocation }) => {
         setIsStreaming(false)
         setAnalysis(null)
         setCameraError(null)
+        setShowSubmitButton(false)
     }
 
     const captureFrame = () => {
@@ -443,6 +501,19 @@ const LiveCamera = ({ userLocation }) => {
         if (!isStreaming) return
 
         setIsAnalyzing(true)
+
+        // Ensure we have current location
+        let currentCoords = userCoordinates
+        if (!currentCoords) {
+            try {
+                currentCoords = await getCurrentLocation()
+            } catch (error) {
+                setCameraError("Cannot analyze without location access")
+                setIsAnalyzing(false)
+                return
+            }
+        }
+
         const frameImage = captureFrame()
 
         // Simulate API call delay
@@ -462,18 +533,33 @@ const LiveCamera = ({ userLocation }) => {
                 "Immediate collection needed",
                 "Sort recyclables",
                 "Monitor overflow risk",
-                `Contact ${userLocation} waste management`
+                "Contact local waste management"
             ],
-            location: userLocation,
-            coordinates: userCoordinates || locationInfo,
+            coordinates: currentCoords,
             capturedImage: frameImage,
-            bingMapsUrl: userCoordinates
-                ? `https://www.bing.com/maps/embed?h=300&w=400&cp=${userCoordinates.lat}~${userCoordinates.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
-                : `https://www.bing.com/maps/embed?h=300&w=400&cp=${locationInfo.lat}~${locationInfo.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
+            bingMapsUrl: `https://www.bing.com/maps/embed?h=300&w=400&cp=${currentCoords.lat}~${currentCoords.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
         }
 
         setAnalysis(mockAnalysis)
         setIsAnalyzing(false)
+        setShowSubmitButton(true)
+    }
+
+    const handleSubmitReport = () => {
+        if (analysis && userCoordinates && onReportSubmit) {
+            const report = {
+                id: Date.now(),
+                image: analysis.capturedImage,
+                location: userCoordinates,
+                analysis: analysis,
+                timestamp: new Date(),
+                status: "pending",
+                type: "live-camera"
+            }
+            onReportSubmit(report)
+            setShowSubmitButton(false)
+            setAnalysis(null)
+        }
     }
 
     const switchCamera = (newDeviceId) => {
@@ -503,7 +589,7 @@ const LiveCamera = ({ userLocation }) => {
                     </div>
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900">Live Camera</h2>
-                        <p className="text-sm text-gray-500">{userLocation} County - Real-time Analysis</p>
+                        <p className="text-sm text-gray-500">Real-time Analysis</p>
                     </div>
                 </div>
                 <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-full">
@@ -556,7 +642,7 @@ const LiveCamera = ({ userLocation }) => {
                                 <MapPin className="w-3 h-3 inline mr-1" />
                                 {userCoordinates
                                     ? `Current Location - ${userCoordinates.lat.toFixed(4)}, ${userCoordinates.lng.toFixed(4)}`
-                                    : `${userLocation} - ${locationInfo.lat.toFixed(4)}, ${locationInfo.lng.toFixed(4)}`
+                                    : `Waiting for location...`
                                 }
                             </div>
                         </>
@@ -565,14 +651,19 @@ const LiveCamera = ({ userLocation }) => {
                             <Camera className="w-20 h-20 text-gray-400 mx-auto mb-4" />
                             <p className="text-gray-300 font-semibold text-lg">Camera Ready</p>
                             <p className="text-gray-400 text-sm">Click start to begin live analysis</p>
-                            <div className="mt-2 text-xs text-gray-500">
-                                <MapPin className="w-3 h-3 inline mr-1" />
-                                {userLocation} County
-                            </div>
                         </div>
                     )}
                 </div>
             </div>
+
+            {locationError && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+                    <div className="flex items-center">
+                        <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
+                        <p className="text-red-700 text-sm">{locationError}</p>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4 mb-6">
                 <button
@@ -615,7 +706,6 @@ const LiveCamera = ({ userLocation }) => {
                             <span className="text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full font-medium">
                                 {analysis.confidence}% confident
                             </span>
-                            <span className="text-xs text-gray-500">{userLocation}</span>
                         </div>
                     </div>
 
@@ -628,7 +718,7 @@ const LiveCamera = ({ userLocation }) => {
                             allowFullScreen
                             loading="lazy"
                             referrerPolicy="no-referrer-when-downgrade"
-                            title={`Live Analysis Location - ${userLocation}`}
+                            title="Live Analysis Location"
                         ></iframe>
                     </div>
 
@@ -697,46 +787,71 @@ const LiveCamera = ({ userLocation }) => {
                         <div>
                             <p className="font-medium text-green-800">Analysis Location</p>
                             <p className="text-sm text-green-600">
-                                {analysis.location} County - {analysis.coordinates.lat.toFixed(6)}, {analysis.coordinates.lng.toFixed(6)}
+                                Current Position - {analysis.coordinates.lat.toFixed(6)}, {analysis.coordinates.lng.toFixed(6)}
                             </p>
                         </div>
                     </div>
+
+                    {/* SUBMIT BUTTON FOR LIVE CAMERA */}
+                    {showSubmitButton && (
+                        <button
+                            onClick={handleSubmitReport}
+                            className="w-full bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg mt-6 flex items-center justify-center space-x-3"
+                        >
+                            <Upload className="w-6 h-6" />
+                            <span>Submit Live Camera Report</span>
+                        </button>
+                    )}
                 </div>
             )}
         </div>
     )
 }
 
-// Enhanced Image Upload Component with Real Maps
-const EnhancedImageUpload = ({ onSubmit, userLocation }) => {
+// Enhanced Image Upload Component with Current Location
+const EnhancedImageUpload = ({ onReportSubmit }) => {
     const [image, setImage] = useState(null)
     const [location, setLocation] = useState(null)
     const [isAnalyzing, setIsAnalyzing] = useState(false)
     const [analysis, setAnalysis] = useState(null)
     const [analysisHistory, setAnalysisHistory] = useState([])
+    const [locationError, setLocationError] = useState(null)
+    const [showSubmitButton, setShowSubmitButton] = useState(false)
     const fileInputRef = useRef(null)
 
-    const locationInfo = LOCATION_DATA[userLocation] || LOCATION_DATA["Nairobi"]
+    // Get user's current location
+    const getCurrentLocation = useCallback(() => {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error("Geolocation is not supported"))
+                return
+            }
 
-    const getLocation = useCallback(() => {
-        if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    setLocation({
+                    const coords = {
                         lat: position.coords.latitude,
                         lng: position.coords.longitude,
                         accuracy: position.coords.accuracy,
                         bingMapsUrl: `https://www.bing.com/maps/embed?h=300&w=400&cp=${position.coords.latitude}~${position.coords.longitude}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
-                    })
+                    }
+                    setLocation(coords)
+                    setLocationError(null)
+                    resolve(coords)
                 },
-                () => {
-                    setLocation(locationInfo)
+                (error) => {
+                    const errorMsg = `Location access denied. Please enable location services.`
+                    setLocationError(errorMsg)
+                    reject(new Error(errorMsg))
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
                 }
             )
-        } else {
-            setLocation(locationInfo)
-        }
-    }, [locationInfo])
+        })
+    }, [])
 
     const handleImageUpload = (event) => {
         const file = event.target.files[0]
@@ -744,14 +859,23 @@ const EnhancedImageUpload = ({ onSubmit, userLocation }) => {
             const reader = new FileReader()
             reader.onload = (e) => {
                 setImage(e.target.result)
-                simulateEnhancedAIAnalysis()
+                // Get location when image is uploaded
+                getCurrentLocation()
+                    .then(() => simulateEnhancedAIAnalysis())
+                    .catch(() => {
+                        setLocationError("Cannot analyze without location access")
+                    })
             }
             reader.readAsDataURL(file)
-            getLocation()
         }
     }
 
     const simulateEnhancedAIAnalysis = async () => {
+        if (!location) {
+            setLocationError("Location required for analysis")
+            return
+        }
+
         setIsAnalyzing(true)
 
         await new Promise((resolve) => setTimeout(resolve, 4000))
@@ -767,38 +891,37 @@ const EnhancedImageUpload = ({ onSubmit, userLocation }) => {
             detectedItems: ["Plastic bottles", "Food containers", "Paper waste", "Glass bottles", "Metal cans"],
             environmentalImpact: Math.floor(Math.random() * 10) + 1,
             recommendations: [
-                `Schedule collection within 24 hours in ${userLocation}`,
+                "Schedule collection within 24 hours",
                 "Separate recyclable materials",
                 "Monitor for overflow",
                 "Consider additional bins for this location",
-                `Contact ${userLocation} waste management department`
+                "Contact local waste management department"
             ],
             healthRisk: Math.floor(Math.random() * 5) + 1,
             estimatedWeight: Math.floor(Math.random() * 50) + 10,
-            location: userLocation,
-            coordinates: location || locationInfo,
-            bingMapsUrl: location?.bingMapsUrl || `https://www.bing.com/maps/embed?h=300&w=400&cp=${locationInfo.lat}~${locationInfo.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
+            coordinates: location,
+            bingMapsUrl: location.bingMapsUrl
         }
 
         setAnalysis(mockAnalysis)
         setAnalysisHistory((prev) => [mockAnalysis, ...prev.slice(0, 4)])
         setIsAnalyzing(false)
+        setShowSubmitButton(true)
     }
 
-    const handleSubmit = () => {
-        if (image && location && analysis && onSubmit) {
+    const handleSubmitReport = () => {
+        if (image && location && analysis && onReportSubmit) {
             const report = {
                 id: Date.now(),
                 image,
-                location: location || locationInfo,
+                location: location,
                 analysis,
                 timestamp: new Date(),
                 status: "pending",
-                type: "manual",
-                county: userLocation
+                type: "manual"
             }
-            onSubmit(report)
-
+            onReportSubmit(report)
+            setShowSubmitButton(false)
             setImage(null)
             setLocation(null)
             setAnalysis(null)
@@ -820,7 +943,7 @@ const EnhancedImageUpload = ({ onSubmit, userLocation }) => {
                     </div>
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900">Image Upload & Analysis</h2>
-                        <p className="text-sm text-gray-500">{userLocation} County - Advanced AI Processing</p>
+                        <p className="text-sm text-gray-500">Advanced AI Processing</p>
                     </div>
                 </div>
                 <div className="flex items-center space-x-2 bg-purple-50 px-4 py-2 rounded-full">
@@ -834,7 +957,7 @@ const EnhancedImageUpload = ({ onSubmit, userLocation }) => {
                     <div className="border-2 border-dashed border-purple-300 rounded-2xl p-16 text-center hover:border-purple-400 hover:bg-purple-50/30 transition-all duration-300">
                         <Camera className="w-20 h-20 text-purple-400 mx-auto mb-6" />
                         <p className="text-gray-700 font-semibold text-lg mb-2">Upload Waste Image for AI Analysis</p>
-                        <p className="text-gray-500 mb-6">Advanced detection for {userLocation} County</p>
+                        <p className="text-gray-500 mb-6">Advanced detection with location tracking</p>
                         <input
                             type="file"
                             ref={fileInputRef}
@@ -860,10 +983,11 @@ const EnhancedImageUpload = ({ onSubmit, userLocation }) => {
                                 alt="Uploaded waste"
                                 className="w-full h-80 object-cover rounded-2xl shadow-lg"
                             />
-                            <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-xs backdrop-blur-sm">
-                                <MapPin className="w-3 h-3 inline mr-1" />
-                                {userLocation}
-                            </div>
+                            {location && (
+                                <div className="absolute bottom-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-xs backdrop-blur-sm">
+                                    📍 {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+                                </div>
+                            )}
                         </div>
                         <button
                             onClick={() => fileInputRef.current?.click()}
@@ -875,6 +999,21 @@ const EnhancedImageUpload = ({ onSubmit, userLocation }) => {
                 )}
             </div>
 
+            {locationError && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+                    <div className="flex items-center">
+                        <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
+                        <p className="text-red-700 text-sm">{locationError}</p>
+                        <button
+                            onClick={getCurrentLocation}
+                            className="ml-auto bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {isAnalyzing && (
                 <div className="text-center py-16 mb-8">
                     <div className="relative inline-block">
@@ -885,9 +1024,6 @@ const EnhancedImageUpload = ({ onSubmit, userLocation }) => {
                     <p className="text-gray-600 text-sm mt-2">
                         Processing with computer vision • Environmental impact assessment • Location-based recommendations
                     </p>
-                    <div className="mt-4 bg-purple-50 rounded-lg p-3 inline-block">
-                        <p className="text-xs text-purple-600">Analyzing for {userLocation} County standards</p>
-                    </div>
                 </div>
             )}
 
@@ -904,9 +1040,6 @@ const EnhancedImageUpload = ({ onSubmit, userLocation }) => {
                             <span className="text-sm bg-purple-100 text-purple-800 px-4 py-2 rounded-full font-semibold">
                                 {analysis.confidence}% Confident
                             </span>
-                            <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                                {analysis.location} County
-                            </span>
                         </div>
                     </div>
 
@@ -919,7 +1052,7 @@ const EnhancedImageUpload = ({ onSubmit, userLocation }) => {
                             allowFullScreen
                             loading="lazy"
                             referrerPolicy="no-referrer-when-downgrade"
-                            title={`Analysis Location - ${userLocation}`}
+                            title="Analysis Location"
                         ></iframe>
                     </div>
 
@@ -1006,27 +1139,24 @@ const EnhancedImageUpload = ({ onSubmit, userLocation }) => {
                                 <div>
                                     <p className="font-bold text-green-800 text-lg">Location Analysis Complete</p>
                                     <p className="text-sm text-green-600">
-                                        {analysis.location} County - {analysis.coordinates.lat.toFixed(6)}, {analysis.coordinates.lng.toFixed(6)}
+                                        Current Position - {analysis.coordinates.lat.toFixed(6)}, {analysis.coordinates.lng.toFixed(6)}
                                     </p>
                                     {analysis.coordinates.accuracy && (
                                         <p className="text-xs text-gray-500 mt-1">Accuracy: ±{Math.round(analysis.coordinates.accuracy)}m</p>
                                     )}
                                 </div>
                             </div>
-                            <div className="text-right">
-                                <p className="text-sm text-gray-600">Waste Centers</p>
-                                <p className="font-bold text-2xl text-gray-900">{locationInfo.waste_centers}</p>
-                            </div>
                         </div>
                     </div>
 
-                    {onSubmit && (
+                    {/* SUBMIT BUTTON FOR IMAGE UPLOAD */}
+                    {showSubmitButton && (
                         <button
-                            onClick={handleSubmit}
+                            onClick={handleSubmitReport}
                             className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 hover:from-purple-700 hover:via-pink-700 hover:to-rose-700 text-white py-5 rounded-2xl font-bold text-xl transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl flex items-center justify-center space-x-3"
                         >
                             <Upload className="w-6 h-6" />
-                            <span>Submit Detailed Report for {userLocation}</span>
+                            <span>Submit Image Analysis Report</span>
                         </button>
                     )}
                 </div>
@@ -1035,17 +1165,17 @@ const EnhancedImageUpload = ({ onSubmit, userLocation }) => {
     )
 }
 
-// Enhanced Hero Section
-const HeroSection = ({ setCurrentPage, userLocation }) => {
-    const locationInfo = LOCATION_DATA[userLocation] || LOCATION_DATA["Nairobi"]
+// ... (rest of the components remain the same - HeroSection, Header, ReportForm, ReportsView, SuccessModal, AuthSystem, WasteReportingApp)
 
+// Enhanced Hero Section (simplified)
+const HeroSection = ({ setCurrentPage }) => {
     return (
         <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-24">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-20">
                     <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full text-blue-700 text-sm font-semibold mb-8 border border-blue-200">
                         <Brain className="w-5 h-5 mr-2" />
-                        AI-Powered Waste Management for {userLocation} County
+                        AI-Powered Waste Management
                     </div>
                     <h2 className="text-6xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight">
                         Smart Waste Reporting
@@ -1055,23 +1185,23 @@ const HeroSection = ({ setCurrentPage, userLocation }) => {
                     </h2>
                     <p className="text-xl text-gray-600 max-w-4xl mx-auto mb-8 leading-relaxed">
                         Advanced monitoring with CCTV automation, live camera analysis, and detailed image processing.
-                        Serving {locationInfo.population.toLocaleString()} residents with {locationInfo.waste_centers} waste management centers.
+                        Real-time location capture ensures accurate waste management.
                     </p>
 
                     <div className="flex justify-center items-center space-x-8 mb-12">
                         <div className="text-center">
-                            <div className="text-3xl font-bold text-blue-600">{locationInfo.waste_centers}</div>
-                            <div className="text-sm text-gray-600">Waste Centers</div>
-                        </div>
-                        <div className="w-px h-12 bg-gray-300"></div>
-                        <div className="text-center">
-                            <div className="text-3xl font-bold text-green-600">{Math.floor(locationInfo.population / 1000)}K+</div>
-                            <div className="text-sm text-gray-600">Residents Served</div>
-                        </div>
-                        <div className="w-px h-12 bg-gray-300"></div>
-                        <div className="text-center">
-                            <div className="text-3xl font-bold text-purple-600">24/7</div>
+                            <div className="text-3xl font-bold text-blue-600">24/7</div>
                             <div className="text-sm text-gray-600">AI Monitoring</div>
+                        </div>
+                        <div className="w-px h-12 bg-gray-300"></div>
+                        <div className="text-center">
+                            <div className="text-3xl font-bold text-green-600">Real-time</div>
+                            <div className="text-sm text-gray-600">Location Tracking</div>
+                        </div>
+                        <div className="w-px h-12 bg-gray-300"></div>
+                        <div className="text-center">
+                            <div className="text-3xl font-bold text-purple-600">Instant</div>
+                            <div className="text-sm text-gray-600">AI Analysis</div>
                         </div>
                     </div>
 
@@ -1081,17 +1211,17 @@ const HeroSection = ({ setCurrentPage, userLocation }) => {
                             className="group bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-800 text-white text-xl font-bold py-5 px-12 rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-300 flex items-center space-x-4"
                         >
                             <Camera className="w-7 h-7 group-hover:animate-pulse" />
-                            <span>Start Reporting in {userLocation}</span>
+                            <span>Start Reporting Now</span>
                         </button>
                     </div>
 
-                    <div className="grid md:grid-cols-4 gap-8 max-w-6xl mx-auto">
+                    <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
                         <div className="group text-center p-6 rounded-2xl hover:bg-white hover:shadow-lg transition-all duration-300">
                             <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-lg">
                                 <Monitor className="w-10 h-10 text-blue-600" />
                             </div>
                             <h3 className="text-xl font-bold text-gray-900 mb-3">CCTV Monitoring</h3>
-                            <p className="text-gray-600">Automated reports every 10 minutes with location tracking</p>
+                            <p className="text-gray-600">Automated reports with real-time location tracking</p>
                         </div>
 
                         <div className="group text-center p-6 rounded-2xl hover:bg-white hover:shadow-lg transition-all duration-300">
@@ -1099,7 +1229,7 @@ const HeroSection = ({ setCurrentPage, userLocation }) => {
                                 <Eye className="w-10 h-10 text-green-600" />
                             </div>
                             <h3 className="text-xl font-bold text-gray-900 mb-3">Live Camera</h3>
-                            <p className="text-gray-600">Real-time analysis with full camera functionality</p>
+                            <p className="text-gray-600">Real-time analysis with location capture</p>
                         </div>
 
                         <div className="group text-center p-6 rounded-2xl hover:bg-white hover:shadow-lg transition-all duration-300">
@@ -1107,15 +1237,7 @@ const HeroSection = ({ setCurrentPage, userLocation }) => {
                                 <Upload className="w-10 h-10 text-purple-600" />
                             </div>
                             <h3 className="text-xl font-bold text-gray-900 mb-3">Image Upload</h3>
-                            <p className="text-gray-600">Detailed AI analysis with environmental insights</p>
-                        </div>
-
-                        <div className="group text-center p-6 rounded-2xl hover:bg-white hover:shadow-lg transition-all duration-300">
-                            <div className="w-20 h-20 bg-gradient-to-br from-orange-100 to-red-200 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-lg">
-                                <Brain className="w-10 h-10 text-orange-600" />
-                            </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3">AI Analysis</h3>
-                            <p className="text-gray-600">Location-based recommendations and impact assessment</p>
+                            <p className="text-gray-600">AI analysis with current location data</p>
                         </div>
                     </div>
                 </div>
@@ -1125,7 +1247,7 @@ const HeroSection = ({ setCurrentPage, userLocation }) => {
 }
 
 // Enhanced Header Component with Auth
-const Header = ({ currentPage, setCurrentPage, userLocation, setUserLocation, user, onLogin, onLogout }) => (
+const Header = ({ currentPage, setCurrentPage, user, onLogin, onLogout }) => (
     <header className="bg-white shadow-xl border-b sticky top-0 z-50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
@@ -1140,24 +1262,11 @@ const Header = ({ currentPage, setCurrentPage, userLocation, setUserLocation, us
                         <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
                             WasteSpotter Pro
                         </h1>
-                        <p className="text-sm text-gray-500 font-medium">Advanced AI Waste Management • {userLocation} County</p>
+                        <p className="text-sm text-gray-500 font-medium">Advanced AI Waste Management</p>
                     </div>
                 </div>
 
                 <div className="flex items-center space-x-6">
-                    <div className="flex items-center space-x-2">
-                        <MapPin className="w-4 h-4 text-gray-500" />
-                        <select
-                            value={userLocation}
-                            onChange={(e) => setUserLocation(e.target.value)}
-                            className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                            {Object.keys(LOCATION_DATA).map(county => (
-                                <option key={county} value={county}>{county} County</option>
-                            ))}
-                        </select>
-                    </div>
-
                     <div className="hidden md:flex items-center space-x-6 text-sm font-medium text-gray-600">
                         <button
                             onClick={() => setCurrentPage("home")}
@@ -1220,7 +1329,7 @@ const Header = ({ currentPage, setCurrentPage, userLocation, setUserLocation, us
 )
 
 // Enhanced Report Form Component
-const ReportForm = ({ onSubmit, userLocation }) => {
+const ReportForm = ({ onReportSubmit }) => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1229,14 +1338,14 @@ const ReportForm = ({ onSubmit, userLocation }) => {
                     <p className="text-xl text-gray-600 mb-4">Choose your preferred method for waste detection and analysis</p>
                     <div className="inline-flex items-center px-4 py-2 bg-blue-100 rounded-full text-blue-700 text-sm font-medium">
                         <MapPin className="w-4 h-4 mr-2" />
-                        Currently serving {userLocation} County
+                        Real-time Location Capture Enabled
                     </div>
                 </div>
 
                 <div className="grid lg:grid-cols-1 xl:grid-cols-3 gap-8">
-                    <CCTVMonitoring userLocation={userLocation} />
-                    <LiveCamera userLocation={userLocation} />
-                    <EnhancedImageUpload onSubmit={onSubmit} userLocation={userLocation} />
+                    <CCTVMonitoring onReportSubmit={onReportSubmit} />
+                    <LiveCamera onReportSubmit={onReportSubmit} />
+                    <EnhancedImageUpload onReportSubmit={onReportSubmit} />
                 </div>
             </div>
         </div>
@@ -1244,42 +1353,40 @@ const ReportForm = ({ onSubmit, userLocation }) => {
 }
 
 // Enhanced Reports View Component
-const ReportsView = ({ reports, userLocation }) => {
-    const locationReports = reports.filter(report => report.county === userLocation)
-
+const ReportsView = ({ reports }) => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-12">
                     <h1 className="text-5xl font-bold text-gray-900 mb-6">Waste Reports Dashboard</h1>
-                    <p className="text-xl text-gray-600 mb-4">Track all waste reports for {userLocation} County</p>
+                    <p className="text-xl text-gray-600 mb-4">Track all waste reports with location data</p>
                     <div className="flex justify-center space-x-8">
                         <div className="text-center">
-                            <div className="text-3xl font-bold text-blue-600">{locationReports.length}</div>
+                            <div className="text-3xl font-bold text-blue-600">{reports.length}</div>
                             <div className="text-sm text-gray-600">Total Reports</div>
                         </div>
                         <div className="text-center">
-                            <div className="text-3xl font-bold text-green-600">{locationReports.filter(r => r.status === "completed").length}</div>
+                            <div className="text-3xl font-bold text-green-600">{reports.filter(r => r.status === "completed").length}</div>
                             <div className="text-sm text-gray-600">Completed</div>
                         </div>
                         <div className="text-center">
-                            <div className="text-3xl font-bold text-yellow-600">{locationReports.filter(r => r.status === "pending").length}</div>
+                            <div className="text-3xl font-bold text-yellow-600">{reports.filter(r => r.status === "pending").length}</div>
                             <div className="text-sm text-gray-600">Pending</div>
                         </div>
                     </div>
                 </div>
 
-                {locationReports.length === 0 ? (
+                {reports.length === 0 ? (
                     <div className="text-center py-20">
                         <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-3xl flex items-center justify-center mx-auto mb-6">
                             <Trash2 className="w-12 h-12 text-gray-400" />
                         </div>
-                        <p className="text-gray-500 text-xl font-semibold">No reports for {userLocation} County yet</p>
+                        <p className="text-gray-500 text-xl font-semibold">No reports generated yet</p>
                         <p className="text-gray-400 mt-2">Start by reporting waste in your area</p>
                     </div>
                 ) : (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {locationReports.map((report) => (
+                        {reports.map((report) => (
                             <div key={report.id} className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 hover:shadow-2xl transition-all duration-300">
                                 {report.image && (
                                     <div className="relative">
@@ -1288,9 +1395,6 @@ const ReportsView = ({ reports, userLocation }) => {
                                             alt="Waste bin report"
                                             className="w-full h-56 object-cover"
                                         />
-                                        <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-xs backdrop-blur-sm">
-                                            {report.county}
-                                        </div>
                                     </div>
                                 )}
                                 <div className="p-6">
@@ -1325,12 +1429,17 @@ const ReportsView = ({ reports, userLocation }) => {
                                     <div className="space-y-2 mb-4">
                                         {report.type && (
                                             <div className="flex items-center text-blue-600 text-sm">
-                                                {report.type === "automatic" ? (
+                                                {report.type === "cctv" ? (
                                                     <Monitor className="w-4 h-4 mr-2" />
+                                                ) : report.type === "live-camera" ? (
+                                                    <Eye className="w-4 h-4 mr-2" />
                                                 ) : (
                                                     <Upload className="w-4 h-4 mr-2" />
                                                 )}
-                                                <span>{report.type === "automatic" ? "CCTV Auto-Report" : "Manual Upload"}</span>
+                                                <span>
+                                                    {report.type === "cctv" ? "CCTV Report" :
+                                                        report.type === "live-camera" ? "Live Camera" : "Image Upload"}
+                                                </span>
                                             </div>
                                         )}
 
@@ -1367,7 +1476,7 @@ const ReportsView = ({ reports, userLocation }) => {
 }
 
 // Success Modal Component
-const SuccessModal = ({ isOpen, onClose, userLocation }) => {
+const SuccessModal = ({ isOpen, onClose }) => {
     if (!isOpen) return null
 
     return (
@@ -1378,7 +1487,7 @@ const SuccessModal = ({ isOpen, onClose, userLocation }) => {
                 </div>
                 <h3 className="text-3xl font-bold text-gray-900 mb-6">Report Submitted Successfully!</h3>
                 <p className="text-gray-600 mb-8 leading-relaxed">
-                    Your detailed waste analysis report has been successfully submitted to {userLocation} County waste management authorities.
+                    Your detailed waste analysis report has been successfully submitted to waste management authorities.
                     Thanks for helping keep our community clean and green!
                 </p>
                 <button
@@ -1545,7 +1654,6 @@ const WasteReportingApp = () => {
     const [currentPage, setCurrentPage] = useState("home")
     const [reports, setReports] = useState([])
     const [showSuccessModal, setShowSuccessModal] = useState(false)
-    const [userLocation, setUserLocation] = useState("Nairobi")
     const [user, setUser] = useState(null)
     const [authMode, setAuthMode] = useState(null)
 
@@ -1599,16 +1707,14 @@ const WasteReportingApp = () => {
             <Header
                 currentPage={currentPage}
                 setCurrentPage={setCurrentPage}
-                userLocation={userLocation}
-                setUserLocation={setUserLocation}
                 user={user}
                 onLogin={setAuthMode}
                 onLogout={handleLogout}
             />
 
-            {currentPage === "home" && <HeroSection setCurrentPage={setCurrentPage} userLocation={userLocation} />}
-            {currentPage === "report" && <ReportForm onSubmit={handleReportSubmit} userLocation={userLocation} />}
-            {currentPage === "reports" && <ReportsView reports={reports} userLocation={userLocation} />}
+            {currentPage === "home" && <HeroSection setCurrentPage={setCurrentPage} />}
+            {currentPage === "report" && <ReportForm onReportSubmit={handleReportSubmit} />}
+            {currentPage === "reports" && <ReportsView reports={reports} />}
 
             {/* Auth Modal */}
             {authMode && (
@@ -1620,7 +1726,7 @@ const WasteReportingApp = () => {
                 />
             )}
 
-            <SuccessModal isOpen={showSuccessModal} onClose={handleSuccessModalClose} userLocation={userLocation} />
+            <SuccessModal isOpen={showSuccessModal} onClose={handleSuccessModalClose} />
         </div>
     )
 }
