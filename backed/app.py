@@ -225,6 +225,15 @@ def internal_error(error):
         "error": "Internal server error"
     }), 500
 
+@app.route("/", methods=["GET"])
+@app.route("/index", methods=["GET"])
+@app.route("/home", methods=["GET"])
+@app.route("/dashboard", methods=["GET"])
+def index():
+    return jsonify({
+        "message": "Welcome to the WasteSpotter AI API. Use  to analyze images."
+    })
+
 # ---------------------------
 # Run App
 # ---------------------------
