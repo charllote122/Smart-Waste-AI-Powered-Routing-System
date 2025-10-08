@@ -26,8 +26,7 @@ import {
     User,
     LogOut
 } from "lucide-react"
-import { apiService } from "../services/api"
-
+import apiService  from "../services/api"
 // Bing Maps API Key
 const BING_MAPS_API_KEY = "your_bing_maps_api_key_here"
 
@@ -1070,7 +1069,7 @@ const EnhancedImageUpload = ({ onSubmit, userLocation }) => {
                         <div className="mb-6">
                             <p className="text-sm font-medium text-gray-700 mb-2">AI Annotated Result</p>
                             <img
-                                src={`http://localhost:5000${analysis.annotated_image_url}`}
+                                src={`http://localhost:5000/api/{analysis.annotated_image_url}`}
                                 alt="AI annotated analysis"
                                 className="w-full h-48 object-contain rounded-lg shadow-md bg-gray-50"
                             />
