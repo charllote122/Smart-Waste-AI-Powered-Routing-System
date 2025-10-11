@@ -17,11 +17,11 @@ const AppContent = () => {
           <Route path="/" element={<HomePage />} />
           <Route path="/report" element={<ReportPage />} />
           <Route path="/reports" element={<ReportsPage />} />
-          {/* Add more routes as needed */}
+          {/* Add a catch-all route for debugging */}
+          <Route path="*" element={<div className="p-8 text-center">Route not found</div>} />
         </Routes>
       </main>
 
-      {/* Modals - these will be conditionally rendered by context */}
       <AuthSystem />
       <SuccessModal />
     </div>
