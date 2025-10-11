@@ -1,20 +1,40 @@
-import React from 'react'
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AppProvider } from './context/AppContext';
+import Header from './components/common/Header';
+import HomePage from './pages/HomePage';
+import ReportPage from './pages/ReportPage';
+import ReportsPage from './pages/ReportsPage';
+import AuthSystem from './components/common/AuthSystem';
+import SuccessModal from './components/common/SuccessModal';
 
-
-import WasteReportingApp from './components/WasteReportingApp'
-
-
-function App() {
+const AppContent = () => {
   return (
-    <div className="min-h-screen">
-      
-      <WasteReportingApp />
-      
-     
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <main>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/report" element={<ReportPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          
+        </Routes>
+      </main>
 
-  
+      <AuthSystem />
+      <SuccessModal />
     </div>
-  )
-}
+  );
+};
 
-export default App
+const App = () => {
+  return (
+    <Router>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </Router>
+  );
+};
+
+export default App;
