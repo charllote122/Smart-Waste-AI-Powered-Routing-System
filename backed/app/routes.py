@@ -1,12 +1,13 @@
 import uuid
-from app import app
-
+from app import app,db
+from models import User,Cameras,Statistics,Reports
 from predict import predict_and_annotate
 from config import Config
 from flask import request, jsonify, send_from_directory
 from datetime import datetime
 from config import Config
 import cv2
+
 import os 
 CLIENT = Config.CLIENT
 MODEL_ID = Config.MODEL_ID
@@ -54,8 +55,42 @@ def analyze_image():
     
     if results.get("success"):
         # Add image URL to response
-        results["annotated_image_url"] = f"/api/results/{results['output_image']}"
+        
+        # first_prediction = results.get("predictions", [{}])[0]
+        # detected_class = first_prediction.get("class", "N/A")
+        # confidence = first_prediction.get("confidence", 0.0)
+        # confidence_percent = f"{float(confidence)*100:.2f}%"
+        # results["annotated_image_url"] = f"/api/results/{results['output_image']}"
+        # file = results['output_image']
+        # img_byte_arr = file.read()
+        # filename= os.path.splitext(file.filename)[0]
+        # #filename = pname
+        # fileext = os.path.splitext(file.filename)[1]
+        # fileext = ".jpg"
+        # file.filename = filename+fileext
+        # fullness = results["fullness"]
+        # if fullness <= 20:
+        #     priority = "low"
+        # elif fullness >= 20 and fullness <=60:
+        #     priority = "medium"
+        # else:
+        #     priority = "high"
+        # newrep = Reports(location='nairobi',priority= priority,status="not done",ai_confidence=confidence_percent,image_data=img_byte_arr, image_name=file.filename)
+        # db.session.add(newrep)
+        # db.session.commit()
+        
         return jsonify(results), 200
+
+        #             return jsonify({
+        #         'status': 'success',
+        #         'data': {
+        #             'results': results,
+        #             'image_file': image_file,
+        #             'fullness': fullness,
+        #             'detected_class': detected_class,
+        #             'confidence': confidence
+        #         }
+        #     })
     else:
         return jsonify(results), 500
 
