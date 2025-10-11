@@ -1,10 +1,11 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Eye, Wifi, Brain, Play, Pause, MapPin, AlertTriangle, CheckCircle, Upload, Navigation, Camera } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import apiService from '../../services/api';
 import { generateBingMapsUrl, validateMapsConfig } from '../../config/maps';
 
 const LiveCamera = () => {
-    const { submitReport, analyzeImage } = useApp();
+    const { submitReport } = useApp();
     const [isStreaming, setIsStreaming] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysis, setAnalysis] = useState(null);
@@ -173,10 +174,40 @@ const LiveCamera = () => {
         return null;
     };
 
+    // Use your actual apiService.analyzeImage method
+    const analyzeWithApiService = async (blob, currentCoords) => {
+        try {
+            console.log('Using apiService.analyzeImage...', {
+                blobSize: blob.size,
+                blobType: blob.type,
+                coordinates: currentCoords
+            });
+
+            // Validate the image file first
+            apiService.validateImageFile(blob, 10);
+
+            // Use your actual apiService.analyzeImage method
+            const analysisResult = await apiService.analyzeImage(blob);
+
+            console.log('apiService.analyzeImage result:', analysisResult);
+
+            if (!analysisResult) {
+                throw new Error('No analysis result received from API service');
+            }
+
+            return analysisResult;
+
+        } catch (error) {
+            console.error('apiService.analyzeImage failed:', error);
+            throw error;
+        }
+    };
+
     const analyzeCurrentFrame = async () => {
         if (!isStreaming) return;
 
         setIsAnalyzing(true);
+        setCameraError(null); // Clear previous errors
 
         let currentCoords = userCoordinates;
         if (!currentCoords) {
@@ -197,48 +228,58 @@ const LiveCamera = () => {
                 canvasRef.current.toBlob(resolve, 'image/jpeg', 0.8);
             });
 
-            // Use API service for analysis
-            const analysisResult = await analyzeImage(blob);
-            
+            console.log('Frame captured:', {
+                width: canvasRef.current.width,
+                height: canvasRef.current.height,
+                blobSize: blob.size
+            });
+
+            // USE YOUR ACTUAL API SERVICE - NO MOCK DATA
+            const analysisResult = await analyzeWithApiService(blob, currentCoords);
+
+            console.log('Raw analysis result from API:', analysisResult);
+
+            // Process the API response - use the actual data from your backend
             const analysisWithLocation = {
+                // Use actual API data from your backend
                 ...analysisResult,
+
+                // Map backend fields to expected frontend fields
+                wasteType: analysisResult.wasteType || analysisResult.type || analysisResult.detected_type || 'Unknown',
+                urgency: analysisResult.urgency || analysisResult.priority || analysisResult.severity || 'Medium',
+                confidence: analysisResult.confidence || analysisResult.accuracy || analysisResult.score || 0,
+                detectedItems: analysisResult.detectedItems || analysisResult.items || analysisResult.detections || [],
+                recommendations: analysisResult.recommendations || analysisResult.suggestions || analysisResult.actions || [],
+                environmentalImpact: analysisResult.environmentalImpact || analysisResult.impact || 1,
+                fillLevel: analysisResult.fillLevel || analysisResult.level || 0,
+                healthRisk: analysisResult.healthRisk || analysisResult.risk || 1,
+                estimatedWeight: analysisResult.estimatedWeight || analysisResult.weight || 0,
+
+                // Check for annotated image from backend
+                annotatedImage: analysisResult.annotatedImage || analysisResult.processedImage || analysisResult.imageUrl,
+
+                // Add location and image data
                 coordinates: currentCoords,
                 capturedImage: frameImage,
                 bingMapsUrl: generateBingMapsUrl(currentCoords.lat, currentCoords.lng),
-                locationDetails: locationDetails
+                locationDetails: locationDetails,
+
+                // Mark as real API data
+                isMockData: false,
+                source: 'api-service'
             };
+
+            console.log('Final analysis data:', analysisWithLocation);
 
             setAnalysis(analysisWithLocation);
             setShowSubmitButton(true);
+
         } catch (error) {
-            console.error('Live analysis failed:', error);
-            // Fallback with location data
-            await new Promise((resolve) => setTimeout(resolve, 3000));
+            console.error('API analysis failed:', error);
 
-            const wasteTypes = ["Mixed Waste", "Organic", "Plastic", "Paper", "Glass", "Electronic"];
-            const urgencyLevels = ["Low", "Medium", "High", "Critical"];
+            // Show actual API error - NO MOCK DATA FALLBACK
+            setCameraError(`Analysis failed: ${error.message}. Please try again.`);
 
-            const analysisWithLocation = {
-                wasteType: wasteTypes[Math.floor(Math.random() * wasteTypes.length)],
-                urgency: urgencyLevels[Math.floor(Math.random() * urgencyLevels.length)],
-                fillLevel: Math.floor(Math.random() * 100) + 1,
-                confidence: Math.floor(Math.random() * 20) + 80,
-                detectedItems: ["Plastic bottles", "Food containers", "Paper waste", "Metal cans"],
-                environmentalImpact: Math.floor(Math.random() * 10) + 1,
-                recommendations: [
-                    "Immediate collection needed",
-                    "Sort recyclables",
-                    "Monitor overflow risk",
-                    "Contact local waste management"
-                ],
-                coordinates: currentCoords,
-                capturedImage: frameImage,
-                bingMapsUrl: generateBingMapsUrl(currentCoords.lat, currentCoords.lng),
-                locationDetails: locationDetails
-            };
-
-            setAnalysis(analysisWithLocation);
-            setShowSubmitButton(true);
         } finally {
             setIsAnalyzing(false);
         }
@@ -247,14 +288,20 @@ const LiveCamera = () => {
     const handleSubmitReport = () => {
         if (analysis && userCoordinates) {
             const report = {
-                image: analysis.capturedImage,
+                image: analysis.annotatedImage || analysis.capturedImage, // Use annotated image if available
+                originalImage: analysis.capturedImage,
                 location: userCoordinates,
                 analysis: analysis,
                 type: "live-camera",
                 bingMapsUrl: analysis.bingMapsUrl,
-                locationDetails: analysis.locationDetails
+                locationDetails: analysis.locationDetails,
+                isMockData: analysis.isMockData || false,
+                source: analysis.source || 'api-service'
             };
+
+            console.log('Submitting report from API:', report);
             submitReport(report);
+
             setShowSubmitButton(false);
             setAnalysis(null);
         }
@@ -279,6 +326,11 @@ const LiveCamera = () => {
         });
     };
 
+    // Check if we have an annotated image to display
+    const getDisplayImage = () => {
+        return analysis?.annotatedImage || analysis?.capturedImage;
+    };
+
     return (
         <div className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100 hover:shadow-3xl transition-all duration-500">
             <div className="flex items-center justify-between mb-8">
@@ -292,7 +344,7 @@ const LiveCamera = () => {
                     </div>
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900">Live Camera</h2>
-                        <p className="text-sm text-gray-500">Real-time Location-based Analysis</p>
+                        <p className="text-sm text-gray-500">Real-time AI Analysis</p>
                     </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -302,9 +354,9 @@ const LiveCamera = () => {
                             }`}></div>
                         <span>{mapsAvailable ? 'Maps Ready' : 'Maps Check'}</span>
                     </div>
-                    <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-full">
+                    <div className="flex items-center space-x-2 bg-green-50 px-4 py-2 rounded-full">
                         <Wifi className={`w-4 h-4 ${isStreaming ? "text-green-500" : "text-gray-400"}`} />
-                        <span className="text-sm font-medium">{isStreaming ? "Live" : "Offline"}</span>
+                        <span className="text-sm font-medium text-green-700">Live Feed</span>
                     </div>
                 </div>
             </div>
@@ -343,6 +395,7 @@ const LiveCamera = () => {
                 </div>
             </div>
 
+            {/* Camera Device Selection */}
             {devices.length > 1 && (
                 <div className="mb-6">
                     <label className="block text-sm font-semibold text-gray-700 mb-3">Camera Device</label>
@@ -360,6 +413,7 @@ const LiveCamera = () => {
                 </div>
             )}
 
+            {/* Camera Display */}
             <div className="mb-6">
                 <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-2xl aspect-video flex items-center justify-center relative overflow-hidden shadow-inner">
                     {cameraError ? (
@@ -423,6 +477,7 @@ const LiveCamera = () => {
                 </div>
             </div>
 
+            {/* Location Error Display */}
             {locationError && (
                 <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
                     <div className="flex items-center justify-between">
@@ -443,12 +498,13 @@ const LiveCamera = () => {
                 </div>
             )}
 
+            {/* Control Buttons */}
             <div className="grid grid-cols-2 gap-4 mb-6">
                 <button
                     onClick={isStreaming ? stopCamera : startCamera}
                     className={`flex items-center justify-center space-x-3 py-4 px-6 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${isStreaming
-                            ? "bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-lg"
-                            : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg"
+                        ? "bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white shadow-lg"
+                        : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg"
                         }`}
                 >
                     {isStreaming ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
@@ -465,6 +521,7 @@ const LiveCamera = () => {
                 </button>
             </div>
 
+            {/* Analysis Loading State */}
             {isAnalyzing && (
                 <div className="text-center py-12 mb-6 bg-blue-50 rounded-2xl border border-blue-200">
                     <div className="inline-block animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mb-4"></div>
@@ -479,12 +536,18 @@ const LiveCamera = () => {
                 </div>
             )}
 
+            {/* Analysis Results */}
             {analysis && !isAnalyzing && (
                 <div className="bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 rounded-2xl p-8 border border-green-100">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="font-bold text-xl flex items-center">
                             <CheckCircle className="w-6 h-6 mr-3 text-green-600" />
                             Live Analysis Results
+                            {!analysis.isMockData && (
+                                <span className="ml-3 bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                                    AI Processed
+                                </span>
+                            )}
                         </h3>
                         <div className="flex items-center space-x-2">
                             <span className="text-sm bg-green-100 text-green-700 px-3 py-1 rounded-full font-medium">
@@ -524,6 +587,19 @@ const LiveCamera = () => {
                         </div>
                     )}
 
+                    {/* Show annotated image if available from backend */}
+                    {analysis.annotatedImage && (
+                        <div className="mb-6">
+                            <p className="text-sm font-medium text-gray-700 mb-2">AI Annotated Image</p>
+                            <img
+                                src={analysis.annotatedImage}
+                                alt="AI analyzed frame"
+                                className="w-full h-48 object-cover rounded-lg shadow-md border border-gray-200"
+                            />
+                        </div>
+                    )}
+
+                    {/* Analysis Metrics */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         <div className="text-center p-4 bg-white rounded-xl shadow-sm">
                             <p className="text-sm text-gray-600 font-medium">Waste Type</p>
@@ -532,8 +608,8 @@ const LiveCamera = () => {
                         <div className="text-center p-4 bg-white rounded-xl shadow-sm">
                             <p className="text-sm text-gray-600 font-medium">Urgency</p>
                             <p className={`font-bold text-lg ${analysis.urgency === "Critical" ? "text-red-600" :
-                                    analysis.urgency === "High" ? "text-orange-600" :
-                                        analysis.urgency === "Medium" ? "text-yellow-600" : "text-green-600"
+                                analysis.urgency === "High" ? "text-orange-600" :
+                                    analysis.urgency === "Medium" ? "text-yellow-600" : "text-green-600"
                                 }`}>
                                 {analysis.urgency}
                             </p>
@@ -548,17 +624,7 @@ const LiveCamera = () => {
                         </div>
                     </div>
 
-                    {analysis.capturedImage && (
-                        <div className="mb-6">
-                            <p className="text-sm font-medium text-gray-700 mb-2">Captured Frame</p>
-                            <img
-                                src={analysis.capturedImage}
-                                alt="Analyzed frame"
-                                className="w-full h-48 object-cover rounded-lg shadow-md border border-gray-200"
-                            />
-                        </div>
-                    )}
-
+                    {/* Detected Items and Recommendations */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
                             <p className="text-sm font-medium text-gray-700 mb-3">Detected Items:</p>
@@ -584,6 +650,7 @@ const LiveCamera = () => {
                         </div>
                     </div>
 
+                    {/* Location Confirmation */}
                     <div className="flex items-center space-x-2 p-4 bg-white rounded-lg border border-gray-200 mb-6">
                         <Navigation className="w-5 h-5 text-green-600" />
                         <div>
@@ -597,6 +664,7 @@ const LiveCamera = () => {
                         </div>
                     </div>
 
+                    {/* Submit Button */}
                     {showSubmitButton && (
                         <button
                             onClick={handleSubmitReport}
@@ -609,12 +677,12 @@ const LiveCamera = () => {
                 </div>
             )}
 
-            {/* Help Text */}
+            {/* Help Text when no analysis */}
             {!analysis && !isAnalyzing && (
                 <div className="text-center py-8 bg-gray-50 rounded-xl">
                     <Brain className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-500">No analysis performed yet</p>
-                    <p className="text-sm text-gray-400 mt-1">Start camera and analyze frames for waste detection</p>
+                    <p className="text-sm text-gray-400 mt-1">Start camera and analyze frames for AI waste detection</p>
                 </div>
             )}
         </div>
