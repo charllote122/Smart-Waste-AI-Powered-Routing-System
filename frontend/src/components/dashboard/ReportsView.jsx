@@ -137,7 +137,7 @@ const ReportsView = () => {
 
                                         {report.location && (
                                             <div className="flex items-center text-gray-500 text-sm">
-                                                <MapPin className="w-4 h-4 mr-2" />
+                                          <MapPin className="w-4 h-4 mr-2" />
                                                 <span>
                                                     {report.location.lat.toFixed(4)}, {report.location.lng.toFixed(4)}
                                                 </span>

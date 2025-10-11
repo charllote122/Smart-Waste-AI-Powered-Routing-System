@@ -135,7 +135,9 @@ const LiveCamera = () => {
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
+                await videoRef.current.play();
             }
+            
             setIsStreaming(true);
         } catch (error) {
             console.error("Camera access error:", error);
@@ -197,7 +199,7 @@ const LiveCamera = () => {
 
             // Use API service for analysis
             const analysisResult = await analyzeImage(blob);
-
+            
             const analysisWithLocation = {
                 ...analysisResult,
                 coordinates: currentCoords,
