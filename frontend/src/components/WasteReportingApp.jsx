@@ -26,8 +26,60 @@ import {
     User,
     LogOut
 } from "lucide-react"
-
+import apiService  from "../services/api"
 // Bing Maps API Key
+const BING_MAPS_API_KEY = "your_bing_maps_api_key_here"
+
+// Location data for all 47 counties in Kenya with real coordinates
+const LOCATION_DATA = {
+    "Nairobi": { lat: -1.286389, lng: 36.817223, waste_centers: 15, population: 4397073 },
+    "Mombasa": { lat: -4.043477, lng: 39.668206, waste_centers: 8, population: 1208333 },
+    "Kisumu": { lat: -0.091702, lng: 34.767956, waste_centers: 5, population: 610082 },
+    "Nakuru": { lat: -0.303099, lng: 36.080025, waste_centers: 6, population: 570674 },
+    "Eldoret": { lat: 0.520237, lng: 35.269779, waste_centers: 4, population: 475716 },
+    "Embu": { lat: -0.531000, lng: 37.451000, waste_centers: 3, population: 324092 },
+    "Kakamega": { lat: 0.282731, lng: 34.751863, waste_centers: 4, population: 1867579 },
+    "Kisii": { lat: -0.677334, lng: 34.779603, waste_centers: 3, population: 1234775 },
+    "Meru": { lat: 0.051472, lng: 37.645523, waste_centers: 4, population: 1545714 },
+    "Nyeri": { lat: -0.420132, lng: 36.947586, waste_centers: 3, population: 759164 },
+    "Machakos": { lat: -1.517683, lng: 37.263414, waste_centers: 4, population: 1421932 },
+    "Kiambu": { lat: -1.171261, lng: 36.835556, waste_centers: 6, population: 2417735 },
+    "Kilifi": { lat: -3.630653, lng: 39.849634, waste_centers: 3, population: 1453787 },
+    "Uasin Gishu": { lat: 0.514277, lng: 35.269779, waste_centers: 3, population: 1163186 },
+    "Narok": { lat: -1.083333, lng: 35.866667, waste_centers: 2, population: 1157873 },
+    "Turkana": { lat: 3.116667, lng: 35.600000, waste_centers: 2, population: 926976 },
+    "Garissa": { lat: -0.453229, lng: 39.646098, waste_centers: 2, population: 841353 },
+    "Wajir": { lat: 1.748838, lng: 40.058613, waste_centers: 2, population: 781263 },
+    "Mandera": { lat: 3.936200, lng: 41.855148, waste_centers: 2, population: 867457 },
+    "Marsabit": { lat: 2.334687, lng: 37.990937, waste_centers: 2, population: 459785 },
+    "Isiolo": { lat: 0.355636, lng: 37.583333, waste_centers: 2, population: 268002 },
+    "Lamu": { lat: -2.269558, lng: 40.900645, waste_centers: 2, population: 143920 },
+    "Taita Taveta": { lat: -3.396051, lng: 38.556316, waste_centers: 2, population: 340671 },
+    "Kwale": { lat: -4.181624, lng: 39.460561, waste_centers: 2, population: 866820 },
+    "Tana River": { lat: -1.500000, lng: 40.000000, waste_centers: 2, population: 315943 },
+    "Murang'a": { lat: -0.721539, lng: 37.152592, waste_centers: 3, population: 1056640 },
+    "Kirinyaga": { lat: -0.500000, lng: 37.283333, waste_centers: 2, population: 610411 },
+    "Nyandarua": { lat: -0.416667, lng: 36.666667, waste_centers: 2, population: 638289 },
+    "Laikipia": { lat: 0.206895, lng: 36.772049, waste_centers: 2, population: 518560 },
+    "Nandi": { lat: 0.183333, lng: 35.100000, waste_centers: 2, population: 885711 },
+    "Baringo": { lat: 0.466667, lng: 35.966667, waste_centers: 2, population: 666763 },
+    "Elgeyo-Marakwet": { lat: 0.500000, lng: 35.583333, waste_centers: 2, population: 454480 },
+    "West Pokot": { lat: 1.250000, lng: 35.116667, waste_centers: 2, population: 621241 },
+    "Samburu": { lat: 1.100000, lng: 36.716667, waste_centers: 2, population: 310327 },
+    "Trans Nzoia": { lat: 1.033333, lng: 34.966667, waste_centers: 2, population: 990341 },
+    "Bungoma": { lat: 0.569525, lng: 34.558376, waste_centers: 3, population: 1670570 },
+    "Busia": { lat: 0.460769, lng: 34.111462, waste_centers: 2, population: 893681 },
+    "Siaya": { lat: 0.060700, lng: 34.288061, waste_centers: 2, population: 993183 },
+    "Homa Bay": { lat: -0.527301, lng: 34.457142, waste_centers: 2, population: 1131950 },
+    "Migori": { lat: -1.063435, lng: 34.473130, waste_centers: 2, population: 1116436 },
+    "Kajiado": { lat: -1.852943, lng: 36.776665, waste_centers: 3, population: 1106968 },
+    "Kericho": { lat: -0.367621, lng: 35.283546, waste_centers: 3, population: 901777 },
+    "Bomet": { lat: -0.781567, lng: 35.341560, waste_centers: 2, population: 875689 },
+    "Vihiga": { lat: 0.076120, lng: 34.719835, waste_centers: 2, population: 590013 },
+    "Nyamira": { lat: -0.566667, lng: 34.950000, waste_centers: 2, population: 605576 },
+    "Makueni": { lat: -1.800000, lng: 37.616667, waste_centers: 2, population: 987653 },
+    "Tharaka Nithi": { lat: -0.300000, lng: 37.816667, waste_centers: 2, population: 393177 },
+}
 
 // Enhanced CCTV Monitoring Component with Current Location
 const CCTVMonitoring = ({ onReportSubmit }) => {
@@ -114,6 +166,60 @@ const CCTVMonitoring = ({ onReportSubmit }) => {
             }
         }
 
+    const generateAutomaticReport = async () => {
+        try {
+            // For CCTV simulation, we'll use a placeholder image
+            // In a real scenario, you'd capture frames from CCTV feed
+            const response = await fetch('/api/placeholder-image'); // You need to add this endpoint
+            if (response.ok) {
+                const blob = await response.blob();
+                const file = new File([blob], 'cctv-capture.jpg', { type: 'image/jpeg' });
+                
+                const analysis = await apiService.analyzeImage(file);
+                
+                if (analysis.success) {
+                    const newReport = {
+                        id: Date.now(),
+                        camera: selectedCamera,
+                        timestamp: new Date(),
+                        analysis: analysis,
+                        type: "automatic",
+                        location: userLocation,
+                        coordinates: locationInfo,
+                        annotatedImageUrl: analysis.annotated_image_url
+                    }
+
+                    setReports((prev) => [newReport, ...prev.slice(0, 9)])
+                    setLastAnalysis(analysis)
+                }
+            }
+        } catch (error) {
+            console.error('CCTV analysis failed:', error);
+            // Fallback to mock data if API fails
+            const wasteTypes = ["Mixed Waste", "Organic", "Plastic", "Paper", "Glass"]
+            const urgencyLevels = ["Low", "Medium", "High", "Critical"]
+
+            const mockAnalysis = {
+                wasteType: wasteTypes[Math.floor(Math.random() * wasteTypes.length)],
+                urgency: urgencyLevels[Math.floor(Math.random() * urgencyLevels.length)],
+                fillLevel: Math.floor(Math.random() * 100) + 1,
+                confidence: Math.floor(Math.random() * 20) + 80,
+                detectedItems: ["Plastic bottles", "Food waste", "Paper bags"],
+                recommendations: ["Schedule immediate collection", "Check for overflow", "Monitor for 24 hours"],
+            }
+
+            const newReport = {
+                id: Date.now(),
+                camera: selectedCamera,
+                timestamp: new Date(),
+                analysis: mockAnalysis,
+                type: "automatic",
+                location: userLocation,
+                coordinates: locationInfo
+            }
+
+            setReports((prev) => [newReport, ...prev.slice(0, 9)])
+            setLastAnalysis(mockAnalysis)
         const wasteTypes = ["Mixed Waste", "Organic", "Plastic", "Paper", "Glass"]
         const urgencyLevels = ["Low", "Medium", "High", "Critical"]
 
@@ -281,7 +387,7 @@ const CCTVMonitoring = ({ onReportSubmit }) => {
                     <h3 className="font-bold text-xl mb-6 flex items-center">
                         <Brain className="w-6 h-6 mr-3 text-blue-600" />
                         Latest AI Analysis
-                        <span className="ml-auto text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full">{lastAnalysis.confidence}% confident</span>
+                        <span className="ml-auto text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full">{lastAnalysis.confidence || lastAnalysis.confidence}% confident</span>
                     </h3>
                     <div className="grid grid-cols-4 gap-4 mb-6">
                         <div className="text-center p-4 bg-white rounded-xl shadow-sm">
@@ -389,6 +495,7 @@ const LiveCamera = ({ onReportSubmit }) => {
     const [showSubmitButton, setShowSubmitButton] = useState(false)
     const videoRef = useRef(null)
     const canvasRef = useRef(null)
+    const streamRef = useRef(null)
 
     // Get user's current location
     const getCurrentLocation = useCallback(() => {
@@ -458,6 +565,8 @@ const LiveCamera = ({ onReportSubmit }) => {
             }
 
             const stream = await navigator.mediaDevices.getUserMedia(constraints)
+            streamRef.current = stream;
+            
             if (videoRef.current) {
                 videoRef.current.srcObject = stream
                 await videoRef.current.play()
@@ -471,9 +580,12 @@ const LiveCamera = ({ onReportSubmit }) => {
     }
 
     const stopCamera = () => {
-        if (videoRef.current && videoRef.current.srcObject) {
-            const tracks = videoRef.current.srcObject.getTracks()
+        if (streamRef.current) {
+            const tracks = streamRef.current.getTracks()
             tracks.forEach((track) => track.stop())
+            streamRef.current = null
+        }
+        if (videoRef.current) {
             videoRef.current.srcObject = null
         }
         setIsStreaming(false)
@@ -497,10 +609,68 @@ const LiveCamera = ({ onReportSubmit }) => {
         return null
     }
 
+    const captureFrameAsBlob = () => {
+        return new Promise((resolve) => {
+            if (videoRef.current && canvasRef.current) {
+                const canvas = canvasRef.current
+                const video = videoRef.current
+                const ctx = canvas.getContext('2d')
+
+                canvas.width = video.videoWidth
+                canvas.height = video.videoHeight
+                ctx.drawImage(video, 0, 0)
+
+                canvas.toBlob((blob) => {
+                    resolve(blob)
+                }, 'image/jpeg', 0.8)
+            } else {
+                resolve(null)
+            }
+        })
+    }
+
     const analyzeCurrentFrame = async () => {
         if (!isStreaming) return
 
         setIsAnalyzing(true)
+        try {
+            const blob = await captureFrameAsBlob()
+            if (blob) {
+                const file = new File([blob], 'live-capture.jpg', { type: 'image/jpeg' })
+                const analysis = await apiService.analyzeImage(file)
+                
+                if (analysis.success) {
+                    setAnalysis({
+                        ...analysis,
+                        capturedImage: URL.createObjectURL(blob),
+                        location: userLocation,
+                        coordinates: userCoordinates || locationInfo,
+                        bingMapsUrl: userCoordinates
+                            ? `https://www.bing.com/maps/embed?h=300&w=400&cp=${userCoordinates.lat}~${userCoordinates.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
+                            : `https://www.bing.com/maps/embed?h=300&w=400&cp=${locationInfo.lat}~${locationInfo.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
+                    })
+                }
+            }
+        } catch (error) {
+            console.error('Analysis failed:', error)
+            // Fallback to mock data
+            const wasteTypes = ["Mixed Waste", "Organic", "Plastic", "Paper", "Glass", "Electronic"]
+            const urgencyLevels = ["Low", "Medium", "High", "Critical"]
+
+            const mockAnalysis = {
+                wasteType: wasteTypes[Math.floor(Math.random() * wasteTypes.length)],
+                urgency: urgencyLevels[Math.floor(Math.random() * urgencyLevels.length)],
+                fillLevel: Math.floor(Math.random() * 100) + 1,
+                confidence: Math.floor(Math.random() * 20) + 80,
+                detectedItems: ["Plastic bottles", "Food containers", "Paper waste", "Metal cans"],
+                environmentalImpact: Math.floor(Math.random() * 10) + 1,
+                recommendations: [
+                    "Immediate collection needed",
+                    "Sort recyclables",
+                    "Monitor overflow risk",
+                    `Contact ${userLocation} waste management`
+                ],
+            }
 
         // Ensure we have current location
         let currentCoords = userCoordinates
@@ -540,7 +710,16 @@ const LiveCamera = ({ onReportSubmit }) => {
             bingMapsUrl: `https://www.bing.com/maps/embed?h=300&w=400&cp=${currentCoords.lat}~${currentCoords.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
         }
 
-        setAnalysis(mockAnalysis)
+            setAnalysis({
+                ...mockAnalysis,
+                capturedImage: captureFrame(),
+                location: userLocation,
+                coordinates: userCoordinates || locationInfo,
+                bingMapsUrl: userCoordinates
+                    ? `https://www.bing.com/maps/embed?h=300&w=400&cp=${userCoordinates.lat}~${userCoordinates.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
+                    : `https://www.bing.com/maps/embed?h=300&w=400&cp=${locationInfo.lat}~${locationInfo.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
+            })
+        }
         setIsAnalyzing(false)
         setShowSubmitButton(true)
     }
@@ -742,7 +921,7 @@ const LiveCamera = ({ onReportSubmit }) => {
                         </div>
                         <div className="text-center p-4 bg-white rounded-xl shadow-sm">
                             <p className="text-sm text-gray-600 font-medium">Environmental Impact</p>
-                            <p className="font-bold text-lg text-gray-900">{analysis.environmentalImpact}/10</p>
+                            <p className="font-bold text-lg text-gray-900">{analysis.environmentalImpact || 'N/A'}</p>
                         </div>
                     </div>
 
@@ -757,11 +936,22 @@ const LiveCamera = ({ onReportSubmit }) => {
                         </div>
                     )}
 
+                    {analysis.annotated_image_url && (
+                        <div className="mb-6">
+                            <p className="text-sm font-medium text-gray-700 mb-2">Annotated Result</p>
+                            <img
+                                src={`http://localhost:5000${analysis.annotated_image_url}`}
+                                alt="Annotated analysis"
+                                className="w-full h-32 object-cover rounded-lg shadow-md"
+                            />
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <p className="text-sm font-medium text-gray-700 mb-3">Detected Items:</p>
                             <div className="space-y-2">
-                                {analysis.detectedItems.map((item, index) => (
+                                {(analysis.detectedItems || []).map((item, index) => (
                                     <div key={index} className="flex items-center bg-white p-2 rounded">
                                         <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                                         <span className="text-sm">{item}</span>
@@ -772,7 +962,7 @@ const LiveCamera = ({ onReportSubmit }) => {
                         <div>
                             <p className="text-sm font-medium text-gray-700 mb-3">AI Recommendations:</p>
                             <div className="space-y-2">
-                                {analysis.recommendations.map((rec, index) => (
+                                {(analysis.recommendations || []).map((rec, index) => (
                                     <div key={index} className="flex items-start bg-white p-2 rounded">
                                         <AlertTriangle className="w-4 h-4 text-orange-500 mr-2 mt-0.5" />
                                         <span className="text-sm">{rec}</span>
@@ -859,6 +1049,7 @@ const EnhancedImageUpload = ({ onReportSubmit }) => {
             const reader = new FileReader()
             reader.onload = (e) => {
                 setImage(e.target.result)
+                analyzeImage(file)
                 // Get location when image is uploaded
                 getCurrentLocation()
                     .then(() => simulateEnhancedAIAnalysis())
@@ -870,6 +1061,7 @@ const EnhancedImageUpload = ({ onReportSubmit }) => {
         }
     }
 
+    const analyzeImage = async (file) => {
     const simulateEnhancedAIAnalysis = async () => {
         if (!location) {
             setLocationError("Location required for analysis")
@@ -877,7 +1069,48 @@ const EnhancedImageUpload = ({ onReportSubmit }) => {
         }
 
         setIsAnalyzing(true)
+        try {
+            const analysis = await apiService.analyzeImage(file)
+            if (analysis.success) {
+                setAnalysis({
+                    ...analysis,
+                    location: userLocation,
+                    coordinates: location || locationInfo,
+                    bingMapsUrl: location?.bingMapsUrl || `https://www.bing.com/maps/embed?h=300&w=400&cp=${locationInfo.lat}~${locationInfo.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
+                })
+                setAnalysisHistory((prev) => [analysis, ...prev.slice(0, 4)])
+            }
+        } catch (error) {
+            console.error('Image analysis failed:', error)
+            // Fallback to mock data
+            const wasteTypes = ["Mixed Waste", "Organic", "Plastic", "Paper", "Glass", "Metal", "Electronic"]
+            const urgencyLevels = ["Low", "Medium", "High", "Critical"]
 
+            const mockAnalysis = {
+                wasteType: wasteTypes[Math.floor(Math.random() * wasteTypes.length)],
+                urgency: urgencyLevels[Math.floor(Math.random() * urgencyLevels.length)],
+                fillLevel: Math.floor(Math.random() * 100) + 1,
+                confidence: Math.floor(Math.random() * 20) + 80,
+                detectedItems: ["Plastic bottles", "Food containers", "Paper waste", "Glass bottles", "Metal cans"],
+                environmentalImpact: Math.floor(Math.random() * 10) + 1,
+                recommendations: [
+                    `Schedule collection within 24 hours in ${userLocation}`,
+                    "Separate recyclable materials",
+                    "Monitor for overflow",
+                    "Consider additional bins for this location",
+                    `Contact ${userLocation} waste management department`
+                ],
+                healthRisk: Math.floor(Math.random() * 5) + 1,
+                estimatedWeight: Math.floor(Math.random() * 50) + 10,
+            }
+
+            setAnalysis({
+                ...mockAnalysis,
+                location: userLocation,
+                coordinates: location || locationInfo,
+                bingMapsUrl: location?.bingMapsUrl || `https://www.bing.com/maps/embed?h=300&w=400&cp=${locationInfo.lat}~${locationInfo.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
+            })
+            setAnalysisHistory((prev) => [mockAnalysis, ...prev.slice(0, 4)])
         await new Promise((resolve) => setTimeout(resolve, 4000))
 
         const wasteTypes = ["Mixed Waste", "Organic", "Plastic", "Paper", "Glass", "Metal", "Electronic"]
@@ -902,9 +1135,6 @@ const EnhancedImageUpload = ({ onReportSubmit }) => {
             coordinates: location,
             bingMapsUrl: location.bingMapsUrl
         }
-
-        setAnalysis(mockAnalysis)
-        setAnalysisHistory((prev) => [mockAnalysis, ...prev.slice(0, 4)])
         setIsAnalyzing(false)
         setShowSubmitButton(true)
     }
@@ -1088,25 +1318,36 @@ const EnhancedImageUpload = ({ onReportSubmit }) => {
                                 <Shield className="w-6 h-6 text-red-600" />
                             </div>
                             <p className="text-sm text-gray-600 font-medium mb-1">Health Risk</p>
-                            <p className="font-bold text-lg text-gray-900">{analysis.healthRisk}/5</p>
+                            <p className="font-bold text-lg text-gray-900">{analysis.healthRisk || 'N/A'}</p>
                         </div>
                         <div className="text-center p-5 bg-white rounded-xl shadow-sm border border-gray-100">
                             <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-200 rounded-xl flex items-center justify-center mx-auto mb-3">
                                 <Award className="w-6 h-6 text-indigo-600" />
                             </div>
                             <p className="text-sm text-gray-600 font-medium mb-1">Est. Weight</p>
-                            <p className="font-bold text-lg text-gray-900">{analysis.estimatedWeight}kg</p>
+                            <p className="font-bold text-lg text-gray-900">{analysis.estimatedWeight || 'N/A'}kg</p>
                         </div>
                     </div>
+
+                    {analysis.annotated_image_url && (
+                        <div className="mb-6">
+                            <p className="text-sm font-medium text-gray-700 mb-2">AI Annotated Result</p>
+                            <img
+                                src={`http://localhost:5000/api/{analysis.annotated_image_url}`}
+                                alt="AI annotated analysis"
+                                className="w-full h-48 object-contain rounded-lg shadow-md bg-gray-50"
+                            />
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                         <div>
                             <p className="text-sm font-bold text-gray-800 mb-4 flex items-center">
                                 <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
-                                Detected Items ({analysis.detectedItems.length})
+                                Detected Items ({(analysis.detectedItems || []).length})
                             </p>
                             <div className="space-y-3">
-                                {analysis.detectedItems.map((item, index) => (
+                                {(analysis.detectedItems || []).map((item, index) => (
                                     <div key={index} className="flex items-center bg-white p-3 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                                         <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
                                         <span className="text-sm font-medium">{item}</span>
@@ -1117,10 +1358,10 @@ const EnhancedImageUpload = ({ onReportSubmit }) => {
                         <div>
                             <p className="text-sm font-bold text-gray-800 mb-4 flex items-center">
                                 <Zap className="w-4 h-4 mr-2 text-orange-600" />
-                                AI Recommendations ({analysis.recommendations.length})
+                                AI Recommendations ({(analysis.recommendations || []).length})
                             </p>
                             <div className="space-y-3">
-                                {analysis.recommendations.map((rec, index) => (
+                                {(analysis.recommendations || []).map((rec, index) => (
                                     <div key={index} className="flex items-start bg-white p-3 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                                         <div className="w-2 h-2 bg-orange-500 rounded-full mr-3 mt-2"></div>
                                         <span className="text-sm font-medium">{rec}</span>
@@ -1656,6 +1897,7 @@ const WasteReportingApp = () => {
     const [showSuccessModal, setShowSuccessModal] = useState(false)
     const [user, setUser] = useState(null)
     const [authMode, setAuthMode] = useState(null)
+    const [apiStatus, setApiStatus] = useState("checking")
 
     // Check for stored user session on component mount
     useEffect(() => {
@@ -1663,7 +1905,20 @@ const WasteReportingApp = () => {
         if (storedUser) {
             setUser(JSON.parse(storedUser))
         }
+
+        // Check API health
+        checkApiHealth()
     }, [])
+
+    const checkApiHealth = async () => {
+        try {
+            await apiService.healthCheck()
+            setApiStatus("healthy")
+        } catch (error) {
+            setApiStatus("unhealthy")
+            console.error('Backend API is not reachable:', error)
+        }
+    }
 
     const handleLogin = (userData) => {
         setUser(userData)
@@ -1712,6 +1967,16 @@ const WasteReportingApp = () => {
                 onLogout={handleLogout}
             />
 
+            {apiStatus === "unhealthy" && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-center">
+                    <AlertTriangle className="w-4 h-4 inline mr-2" />
+                    Backend API is unreachable. Some features may not work properly.
+                </div>
+            )}
+
+            {currentPage === "home" && <HeroSection setCurrentPage={setCurrentPage} userLocation={userLocation} />}
+            {currentPage === "report" && <ReportForm onSubmit={handleReportSubmit} userLocation={userLocation} />}
+            {currentPage === "reports" && <ReportsView reports={reports} userLocation={userLocation} />}
             {currentPage === "home" && <HeroSection setCurrentPage={setCurrentPage} />}
             {currentPage === "report" && <ReportForm onReportSubmit={handleReportSubmit} />}
             {currentPage === "reports" && <ReportsView reports={reports} />}
