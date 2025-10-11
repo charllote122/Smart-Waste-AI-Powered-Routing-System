@@ -1,14 +1,17 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Upload, Camera, Brain, AlertTriangle, CheckCircle, Navigation, Trash2, Shield, Award, Zap } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import apiService from '../../services/api';
 
 const EnhancedImageUpload = () => {
-    const { submitReport } = useApp();
+    const { submitReport, analyzeImage } = useApp();
     const [image, setImage] = useState(null);
+    const [imageFile, setImageFile] = useState(null);
     const [location, setLocation] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysis, setAnalysis] = useState(null);
     const [locationError, setLocationError] = useState(null);
+    const [uploadError, setUploadError] = useState(null);
     const [showSubmitButton, setShowSubmitButton] = useState(false);
     const fileInputRef = useRef(null);
 
@@ -45,65 +48,101 @@ const EnhancedImageUpload = () => {
         });
     }, []);
 
-    const handleImageUpload = (event) => {
+    const handleImageUpload = async (event) => {
         const file = event.target.files[0];
-        if (file) {
+        if (!file) return;
+
+        try {
+            // Validate image file using API service
+            apiService.validateImageFile(file, 10); // 10MB max size
+
             const reader = new FileReader();
             reader.onload = (e) => {
                 setImage(e.target.result);
+                setImageFile(file);
+                setUploadError(null);
+
                 // Get location when image is uploaded
                 getCurrentLocation()
-                    .then(() => simulateEnhancedAIAnalysis())
+                    .then(() => {
+                        // Auto-analyze after location is obtained
+                        simulateEnhancedAIAnalysis(file);
+                    })
                     .catch(() => {
                         setLocationError("Cannot analyze without location access");
                     });
             };
             reader.readAsDataURL(file);
+        } catch (error) {
+            setUploadError(error.message);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
         }
     };
 
-    const simulateEnhancedAIAnalysis = async () => {
+    const simulateEnhancedAIAnalysis = async (file) => {
         if (!location) {
             setLocationError("Location required for analysis");
             return;
         }
 
         setIsAnalyzing(true);
+        setAnalysis(null);
 
-        await new Promise((resolve) => setTimeout(resolve, 4000));
+        try {
+            // Use the actual API service for analysis
+            const analysisResult = await analyzeImage(file);
 
-        const wasteTypes = ["Mixed Waste", "Organic", "Plastic", "Paper", "Glass", "Metal", "Electronic"];
-        const urgencyLevels = ["Low", "Medium", "High", "Critical"];
+            // Add location data to analysis
+            const analysisWithLocation = {
+                ...analysisResult,
+                coordinates: location,
+                bingMapsUrl: location.bingMapsUrl
+            };
 
-        const mockAnalysis = {
-            wasteType: wasteTypes[Math.floor(Math.random() * wasteTypes.length)],
-            urgency: urgencyLevels[Math.floor(Math.random() * urgencyLevels.length)],
-            fillLevel: Math.floor(Math.random() * 100) + 1,
-            confidence: Math.floor(Math.random() * 20) + 80,
-            detectedItems: ["Plastic bottles", "Food containers", "Paper waste", "Glass bottles", "Metal cans"],
-            environmentalImpact: Math.floor(Math.random() * 10) + 1,
-            recommendations: [
-                "Schedule collection within 24 hours",
-                "Separate recyclable materials",
-                "Monitor for overflow",
-                "Consider additional bins for this location",
-                "Contact local waste management department"
-            ],
-            healthRisk: Math.floor(Math.random() * 5) + 1,
-            estimatedWeight: Math.floor(Math.random() * 50) + 10,
-            coordinates: location,
-            bingMapsUrl: location.bingMapsUrl
-        };
+            setAnalysis(analysisWithLocation);
+            setShowSubmitButton(true);
+        } catch (error) {
+            console.error('Analysis failed:', error);
+            // Fallback to mock analysis
+            await new Promise((resolve) => setTimeout(resolve, 4000));
 
-        setAnalysis(mockAnalysis);
-        setIsAnalyzing(false);
-        setShowSubmitButton(true);
+            const wasteTypes = ["Mixed Waste", "Organic", "Plastic", "Paper", "Glass", "Metal", "Electronic"];
+            const urgencyLevels = ["Low", "Medium", "High", "Critical"];
+
+            const mockAnalysis = {
+                wasteType: wasteTypes[Math.floor(Math.random() * wasteTypes.length)],
+                urgency: urgencyLevels[Math.floor(Math.random() * urgencyLevels.length)],
+                fillLevel: Math.floor(Math.random() * 100) + 1,
+                confidence: Math.floor(Math.random() * 20) + 80,
+                detectedItems: ["Plastic bottles", "Food containers", "Paper waste", "Glass bottles", "Metal cans"],
+                environmentalImpact: Math.floor(Math.random() * 10) + 1,
+                recommendations: [
+                    "Schedule collection within 24 hours",
+                    "Separate recyclable materials",
+                    "Monitor for overflow",
+                    "Consider additional bins for this location",
+                    "Contact local waste management department"
+                ],
+                healthRisk: Math.floor(Math.random() * 5) + 1,
+                estimatedWeight: Math.floor(Math.random() * 50) + 10,
+                coordinates: location,
+                bingMapsUrl: location.bingMapsUrl
+            };
+
+            setAnalysis(mockAnalysis);
+            setShowSubmitButton(true);
+        } finally {
+            setIsAnalyzing(false);
+        }
     };
 
     const handleSubmitReport = () => {
         if (image && location && analysis) {
             const report = {
                 image,
+                imageFile,
                 location: location,
                 analysis,
                 type: "manual",
@@ -112,6 +151,7 @@ const EnhancedImageUpload = () => {
             submitReport(report);
             setShowSubmitButton(false);
             setImage(null);
+            setImageFile(null);
             setLocation(null);
             setAnalysis(null);
             if (fileInputRef.current) {
@@ -122,8 +162,10 @@ const EnhancedImageUpload = () => {
 
     const removeImage = () => {
         setImage(null);
+        setImageFile(null);
         setAnalysis(null);
         setShowSubmitButton(false);
+        setUploadError(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
@@ -156,6 +198,16 @@ const EnhancedImageUpload = () => {
                         <Camera className="w-20 h-20 text-purple-400 mx-auto mb-6" />
                         <p className="text-gray-700 font-semibold text-lg mb-2">Upload Waste Image for AI Analysis</p>
                         <p className="text-gray-500 mb-6">Advanced detection with location tracking</p>
+
+                        {uploadError && (
+                            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+                                <div className="flex items-center">
+                                    <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
+                                    <p className="text-red-700 text-sm">{uploadError}</p>
+                                </div>
+                            </div>
+                        )}
+
                         <input
                             type="file"
                             ref={fileInputRef}
@@ -171,7 +223,7 @@ const EnhancedImageUpload = () => {
                             <Upload className="w-5 h-5" />
                             <span>Choose Image</span>
                         </button>
-                        <p className="text-xs text-gray-400 mt-4">Supports JPG, PNG, WebP formats</p>
+                        <p className="text-xs text-gray-400 mt-4">Supports JPG, PNG, WebP formats (Max 10MB)</p>
                     </div>
                 ) : (
                     <div className="space-y-4">

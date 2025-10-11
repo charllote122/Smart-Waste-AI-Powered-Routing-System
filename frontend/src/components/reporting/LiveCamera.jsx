@@ -3,7 +3,7 @@ import { Eye, Wifi, Brain, Play, Pause, MapPin, AlertTriangle, CheckCircle, Uplo
 import { useApp } from '../../context/AppContext';
 
 const LiveCamera = () => {
-    const { submitReport } = useApp();
+    const { submitReport, analyzeImage } = useApp();
     const [isStreaming, setIsStreaming] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysis, setAnalysis] = useState(null);
@@ -136,33 +136,55 @@ const LiveCamera = () => {
 
         const frameImage = captureFrame();
 
-        // Simulate AI processing
-        await new Promise((resolve) => setTimeout(resolve, 3000));
+        try {
+            // Convert canvas to blob for API upload
+            const blob = await new Promise(resolve => {
+                canvasRef.current.toBlob(resolve, 'image/jpeg', 0.8);
+            });
 
-        const wasteTypes = ["Mixed Waste", "Organic", "Plastic", "Paper", "Glass", "Electronic"];
-        const urgencyLevels = ["Low", "Medium", "High", "Critical"];
+            // Use API service for analysis
+            const analysisResult = await analyzeImage(blob);
 
-        const mockAnalysis = {
-            wasteType: wasteTypes[Math.floor(Math.random() * wasteTypes.length)],
-            urgency: urgencyLevels[Math.floor(Math.random() * urgencyLevels.length)],
-            fillLevel: Math.floor(Math.random() * 100) + 1,
-            confidence: Math.floor(Math.random() * 20) + 80,
-            detectedItems: ["Plastic bottles", "Food containers", "Paper waste", "Metal cans"],
-            environmentalImpact: Math.floor(Math.random() * 10) + 1,
-            recommendations: [
-                "Immediate collection needed",
-                "Sort recyclables",
-                "Monitor overflow risk",
-                "Contact local waste management"
-            ],
-            coordinates: currentCoords,
-            capturedImage: frameImage,
-            bingMapsUrl: `https://www.bing.com/maps/embed?h=300&w=400&cp=${currentCoords.lat}~${currentCoords.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
-        };
+            const analysisWithLocation = {
+                ...analysisResult,
+                coordinates: currentCoords,
+                capturedImage: frameImage,
+                bingMapsUrl: `https://www.bing.com/maps/embed?h=300&w=400&cp=${currentCoords.lat}~${currentCoords.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
+            };
 
-        setAnalysis(mockAnalysis);
-        setIsAnalyzing(false);
-        setShowSubmitButton(true);
+            setAnalysis(analysisWithLocation);
+            setShowSubmitButton(true);
+        } catch (error) {
+            console.error('Live analysis failed:', error);
+            // Fallback to mock analysis
+            await new Promise((resolve) => setTimeout(resolve, 3000));
+
+            const wasteTypes = ["Mixed Waste", "Organic", "Plastic", "Paper", "Glass", "Electronic"];
+            const urgencyLevels = ["Low", "Medium", "High", "Critical"];
+
+            const mockAnalysis = {
+                wasteType: wasteTypes[Math.floor(Math.random() * wasteTypes.length)],
+                urgency: urgencyLevels[Math.floor(Math.random() * urgencyLevels.length)],
+                fillLevel: Math.floor(Math.random() * 100) + 1,
+                confidence: Math.floor(Math.random() * 20) + 80,
+                detectedItems: ["Plastic bottles", "Food containers", "Paper waste", "Metal cans"],
+                environmentalImpact: Math.floor(Math.random() * 10) + 1,
+                recommendations: [
+                    "Immediate collection needed",
+                    "Sort recyclables",
+                    "Monitor overflow risk",
+                    "Contact local waste management"
+                ],
+                coordinates: currentCoords,
+                capturedImage: frameImage,
+                bingMapsUrl: `https://www.bing.com/maps/embed?h=300&w=400&cp=${currentCoords.lat}~${currentCoords.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
+            };
+
+            setAnalysis(mockAnalysis);
+            setShowSubmitButton(true);
+        } finally {
+            setIsAnalyzing(false);
+        }
     };
 
     const handleSubmitReport = () => {

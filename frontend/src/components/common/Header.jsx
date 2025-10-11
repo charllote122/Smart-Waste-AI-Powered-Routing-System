@@ -4,7 +4,7 @@ import { Camera, User, LogOut } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 const Header = () => {
-    const { user, logout, setAuthMode } = useApp();
+    const { user, logout, setAuthMode, serverStatus } = useApp();
     const location = useLocation();
     const currentPage = location.pathname;
 
@@ -16,21 +16,39 @@ const Header = () => {
         <header className="bg-white shadow-xl border-b sticky top-0 z-50 backdrop-blur-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 <div className="flex items-center justify-between">
-                    {/* Logo */}
-                    <Link to="/" className="flex items-center space-x-4 hover:opacity-80 transition-opacity">
-                        <div className="relative">
-                            <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center shadow-lg">
-                                <Camera className="w-8 h-8 text-white" />
+                    {/* Logo and Server Status */}
+                    <div className="flex items-center space-x-4">
+                        <Link to="/" className="flex items-center space-x-4 hover:opacity-80 transition-opacity">
+                            <div className="relative">
+                                <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center shadow-lg">
+                                    <Camera className="w-8 h-8 text-white" />
+                                </div>
+                                <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
                             </div>
-                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
+                            <div>
+                                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
+                                    WasteSpotter Pro
+                                </h1>
+                                <p className="text-sm text-gray-500 font-medium">Advanced AI Waste Management</p>
+                            </div>
+                        </Link>
+
+                        {/* Server Status Indicator */}
+                        <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium ${serverStatus === 'connected' ? 'bg-green-100 text-green-800' :
+                                serverStatus === 'disconnected' ? 'bg-red-100 text-red-800' :
+                                    'bg-yellow-100 text-yellow-800'
+                            }`}>
+                            <div className={`w-2 h-2 rounded-full ${serverStatus === 'connected' ? 'bg-green-500' :
+                                    serverStatus === 'disconnected' ? 'bg-red-500' :
+                                        'bg-yellow-500 animate-pulse'
+                                }`}></div>
+                            <span>
+                                {serverStatus === 'connected' ? 'Server Connected' :
+                                    serverStatus === 'disconnected' ? 'Server Offline' :
+                                        'Checking Connection...'}
+                            </span>
                         </div>
-                        <div>
-                            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
-                                WasteSpotter Pro
-                            </h1>
-                            <p className="text-sm text-gray-500 font-medium">Advanced AI Waste Management</p>
-                        </div>
-                    </Link>
+                    </div>
 
                     {/* Navigation & Auth */}
                     <div className="flex items-center space-x-6">
