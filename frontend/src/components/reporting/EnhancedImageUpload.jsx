@@ -1,7 +1,8 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Upload, Camera, Brain, AlertTriangle, CheckCircle, Navigation, Trash2, Shield, Award, Zap } from 'lucide-react';
+import { Upload, Camera, Brain, AlertTriangle, CheckCircle, Navigation, Trash2, Shield, Award, Zap, MapPin } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import apiService from '../../services/api';
+import { generateBingMapsUrl, validateMapsConfig } from '../../config/maps';
 
 const EnhancedImageUpload = () => {
     const { submitReport, analyzeImage } = useApp();
@@ -13,14 +14,24 @@ const EnhancedImageUpload = () => {
     const [locationError, setLocationError] = useState(null);
     const [uploadError, setUploadError] = useState(null);
     const [showSubmitButton, setShowSubmitButton] = useState(false);
+    const [isGettingLocation, setIsGettingLocation] = useState(false);
+    const [mapsAvailable, setMapsAvailable] = useState(true);
     const fileInputRef = useRef(null);
+
+    // Check maps availability on component mount
+    React.useEffect(() => {
+        setMapsAvailable(validateMapsConfig());
+    }, []);
 
     const getCurrentLocation = useCallback(() => {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
-                reject(new Error("Geolocation is not supported"));
+                reject(new Error("Geolocation is not supported by this browser"));
                 return;
             }
+
+            setIsGettingLocation(true);
+            setLocationError(null);
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
@@ -28,20 +39,37 @@ const EnhancedImageUpload = () => {
                         lat: position.coords.latitude,
                         lng: position.coords.longitude,
                         accuracy: position.coords.accuracy,
-                        bingMapsUrl: `https://www.bing.com/maps/embed?h=300&w=400&cp=${position.coords.latitude}~${position.coords.longitude}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
+                        timestamp: position.timestamp,
+                        bingMapsUrl: generateBingMapsUrl(position.coords.latitude, position.coords.longitude)
                     };
                     setLocation(coords);
                     setLocationError(null);
+                    setIsGettingLocation(false);
                     resolve(coords);
                 },
                 (error) => {
-                    const errorMsg = `Location access denied. Please enable location services.`;
+                    setIsGettingLocation(false);
+                    let errorMsg;
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = "Location access denied. Please enable location permissions in your browser settings.";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = "Location information is unavailable. Please check your device location services.";
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = "Location request timed out. Please try again.";
+                            break;
+                        default:
+                            errorMsg = "An unknown error occurred while getting location.";
+                            break;
+                    }
                     setLocationError(errorMsg);
                     reject(new Error(errorMsg));
                 },
                 {
                     enableHighAccuracy: true,
-                    timeout: 10000,
+                    timeout: 15000,
                     maximumAge: 60000
                 }
             );
@@ -64,13 +92,17 @@ const EnhancedImageUpload = () => {
 
                 // Get location when image is uploaded
                 getCurrentLocation()
-                    .then(() => {
+                    .then((locationCoords) => {
                         // Auto-analyze after location is obtained
-                        simulateEnhancedAIAnalysis(file);
+                        simulateEnhancedAIAnalysis(file, locationCoords);
                     })
-                    .catch(() => {
-                        setLocationError("Cannot analyze without location access");
+                    .catch((error) => {
+                        console.error('Location error:', error);
+                        setLocationError(error.message);
                     });
+            };
+            reader.onerror = () => {
+                setUploadError('Failed to read image file');
             };
             reader.readAsDataURL(file);
         } catch (error) {
@@ -81,8 +113,8 @@ const EnhancedImageUpload = () => {
         }
     };
 
-    const simulateEnhancedAIAnalysis = async (file) => {
-        if (!location) {
+    const simulateEnhancedAIAnalysis = async (file, locationCoords) => {
+        if (!locationCoords) {
             setLocationError("Location required for analysis");
             return;
         }
@@ -91,51 +123,85 @@ const EnhancedImageUpload = () => {
         setAnalysis(null);
 
         try {
+            // Prepare form data with location for API
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('latitude', locationCoords.lat.toString());
+            formData.append('longitude', locationCoords.lng.toString());
+            formData.append('accuracy', locationCoords.accuracy?.toString() || '0');
+
             // Use the actual API service for analysis
             const analysisResult = await analyzeImage(file);
 
             // Add location data to analysis
             const analysisWithLocation = {
                 ...analysisResult,
-                coordinates: location,
-                bingMapsUrl: location.bingMapsUrl
+                coordinates: locationCoords,
+                bingMapsUrl: locationCoords.bingMapsUrl,
+                locationDetails: await getLocationDetails(locationCoords.lat, locationCoords.lng)
             };
 
             setAnalysis(analysisWithLocation);
             setShowSubmitButton(true);
         } catch (error) {
             console.error('Analysis failed:', error);
-            // Fallback to mock analysis
+            // Fallback to mock analysis with location data
             await new Promise((resolve) => setTimeout(resolve, 4000));
 
-            const wasteTypes = ["Mixed Waste", "Organic", "Plastic", "Paper", "Glass", "Metal", "Electronic"];
-            const urgencyLevels = ["Low", "Medium", "High", "Critical"];
-
-            const mockAnalysis = {
-                wasteType: wasteTypes[Math.floor(Math.random() * wasteTypes.length)],
-                urgency: urgencyLevels[Math.floor(Math.random() * urgencyLevels.length)],
-                fillLevel: Math.floor(Math.random() * 100) + 1,
-                confidence: Math.floor(Math.random() * 20) + 80,
-                detectedItems: ["Plastic bottles", "Food containers", "Paper waste", "Glass bottles", "Metal cans"],
-                environmentalImpact: Math.floor(Math.random() * 10) + 1,
-                recommendations: [
-                    "Schedule collection within 24 hours",
-                    "Separate recyclable materials",
-                    "Monitor for overflow",
-                    "Consider additional bins for this location",
-                    "Contact local waste management department"
-                ],
-                healthRisk: Math.floor(Math.random() * 5) + 1,
-                estimatedWeight: Math.floor(Math.random() * 50) + 10,
-                coordinates: location,
-                bingMapsUrl: location.bingMapsUrl
-            };
-
-            setAnalysis(mockAnalysis);
+            const analysisWithLocation = await generateMockAnalysisWithLocation(locationCoords);
+            setAnalysis(analysisWithLocation);
             setShowSubmitButton(true);
         } finally {
             setIsAnalyzing(false);
         }
+    };
+
+    // Get human-readable location details (mock for now)
+    const getLocationDetails = async (lat, lng) => {
+        try {
+            // In a real app, you would call a reverse geocoding API
+            return {
+                address: `Near ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+                city: "Current Location",
+                country: "Your Area",
+                locality: "Waste Spot Location"
+            };
+        } catch (error) {
+            return {
+                address: `Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+                city: "Unknown Area",
+                country: "Location recorded",
+                locality: "Waste detected area"
+            };
+        }
+    };
+
+    const generateMockAnalysisWithLocation = async (locationCoords) => {
+        const wasteTypes = ["Mixed Waste", "Organic", "Plastic", "Paper", "Glass", "Metal", "Electronic"];
+        const urgencyLevels = ["Low", "Medium", "High", "Critical"];
+
+        const locationDetails = await getLocationDetails(locationCoords.lat, locationCoords.lng);
+
+        return {
+            wasteType: wasteTypes[Math.floor(Math.random() * wasteTypes.length)],
+            urgency: urgencyLevels[Math.floor(Math.random() * urgencyLevels.length)],
+            fillLevel: Math.floor(Math.random() * 100) + 1,
+            confidence: Math.floor(Math.random() * 20) + 80,
+            detectedItems: ["Plastic bottles", "Food containers", "Paper waste", "Glass bottles", "Metal cans"],
+            environmentalImpact: Math.floor(Math.random() * 10) + 1,
+            recommendations: [
+                "Schedule collection within 24 hours",
+                "Separate recyclable materials",
+                "Monitor for overflow",
+                "Consider additional bins for this location",
+                "Contact local waste management department"
+            ],
+            healthRisk: Math.floor(Math.random() * 5) + 1,
+            estimatedWeight: Math.floor(Math.random() * 50) + 10,
+            coordinates: locationCoords,
+            bingMapsUrl: locationCoords.bingMapsUrl,
+            locationDetails: locationDetails
+        };
     };
 
     const handleSubmitReport = () => {
@@ -146,7 +212,9 @@ const EnhancedImageUpload = () => {
                 location: location,
                 analysis,
                 type: "manual",
-                bingMapsUrl: analysis.bingMapsUrl
+                bingMapsUrl: analysis.bingMapsUrl,
+                locationDetails: analysis.locationDetails,
+                coordinates: analysis.coordinates
             };
             submitReport(report);
             setShowSubmitButton(false);
@@ -166,8 +234,22 @@ const EnhancedImageUpload = () => {
         setAnalysis(null);
         setShowSubmitButton(false);
         setUploadError(null);
+        setLocationError(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
+        }
+    };
+
+    const retryLocation = () => {
+        setLocationError(null);
+        if (image) {
+            getCurrentLocation()
+                .then((locationCoords) => {
+                    simulateEnhancedAIAnalysis(imageFile, locationCoords);
+                })
+                .catch((error) => {
+                    setLocationError(error.message);
+                });
         }
     };
 
@@ -183,12 +265,54 @@ const EnhancedImageUpload = () => {
                     </div>
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900">Image Upload & Analysis</h2>
-                        <p className="text-sm text-gray-500">Advanced AI Processing</p>
+                        <p className="text-sm text-gray-500">Location-based AI Processing</p>
                     </div>
                 </div>
-                <div className="flex items-center space-x-2 bg-purple-50 px-4 py-2 rounded-full">
-                    <Brain className="w-4 h-4 text-purple-600" />
-                    <span className="text-sm font-medium text-purple-700">AI Ready</span>
+                <div className="flex items-center space-x-2">
+                    <div className={`flex items-center space-x-2 px-3 py-2 rounded-full text-xs font-medium ${mapsAvailable ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                        <div className={`w-2 h-2 rounded-full ${mapsAvailable ? 'bg-green-500' : 'bg-yellow-500'
+                            }`}></div>
+                        <span>{mapsAvailable ? 'Maps Ready' : 'Maps Check'}</span>
+                    </div>
+                    <div className="flex items-center space-x-2 bg-purple-50 px-4 py-2 rounded-full">
+                        <Brain className="w-4 h-4 text-purple-600" />
+                        <span className="text-sm font-medium text-purple-700">AI Ready</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Location Status */}
+            <div className="mb-6">
+                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl border border-blue-200">
+                    <div className="flex items-center space-x-3">
+                        <MapPin className={`w-5 h-5 ${location ? 'text-green-600' : 'text-blue-600'}`} />
+                        <div>
+                            <p className="font-medium text-gray-900">
+                                {location ? 'Location Captured' : 'Waiting for Location'}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                                {location
+                                    ? `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`
+                                    : 'We need your location for accurate waste reporting'
+                                }
+                            </p>
+                        </div>
+                    </div>
+                    {!location && !isGettingLocation && (
+                        <button
+                            onClick={getCurrentLocation}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                        >
+                            Get Location
+                        </button>
+                    )}
+                    {isGettingLocation && (
+                        <div className="flex items-center space-x-2 text-blue-600">
+                            <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                            <span className="text-sm">Getting location...</span>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -197,7 +321,7 @@ const EnhancedImageUpload = () => {
                     <div className="border-2 border-dashed border-purple-300 rounded-2xl p-16 text-center hover:border-purple-400 hover:bg-purple-50/30 transition-all duration-300">
                         <Camera className="w-20 h-20 text-purple-400 mx-auto mb-6" />
                         <p className="text-gray-700 font-semibold text-lg mb-2">Upload Waste Image for AI Analysis</p>
-                        <p className="text-gray-500 mb-6">Advanced detection with location tracking</p>
+                        <p className="text-gray-500 mb-6">Advanced detection with precise location tracking</p>
 
                         {uploadError && (
                             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
@@ -234,13 +358,24 @@ const EnhancedImageUpload = () => {
                                 className="w-full h-80 object-cover rounded-2xl shadow-lg"
                             />
                             {location && (
-                                <div className="absolute bottom-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-xs backdrop-blur-sm">
-                                    📍 {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+                                <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg backdrop-blur-sm">
+                                    <div className="flex items-center space-x-2">
+                                        <MapPin className="w-4 h-4" />
+                                        <div>
+                                            <p className="text-sm font-medium">📍 Current Location</p>
+                                            <p className="text-xs opacity-90">
+                                                {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
+                                            </p>
+                                            {location.accuracy && (
+                                                <p className="text-xs opacity-75">Accuracy: ±{Math.round(location.accuracy)}m</p>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                             <button
                                 onClick={removeImage}
-                                className="absolute top-4 right-4 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full transition-colors"
+                                className="absolute top-4 right-4 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full transition-colors shadow-lg"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>
@@ -257,12 +392,17 @@ const EnhancedImageUpload = () => {
 
             {locationError && (
                 <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
-                    <div className="flex items-center">
-                        <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
-                        <p className="text-red-700 text-sm">{locationError}</p>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                            <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
+                            <div>
+                                <p className="text-red-700 text-sm font-medium">Location Error</p>
+                                <p className="text-red-600 text-sm">{locationError}</p>
+                            </div>
+                        </div>
                         <button
-                            onClick={getCurrentLocation}
-                            className="ml-auto bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+                            onClick={retryLocation}
+                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium"
                         >
                             Retry
                         </button>
@@ -276,10 +416,16 @@ const EnhancedImageUpload = () => {
                         <div className="animate-spin w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full mb-6"></div>
                         <div className="absolute inset-0 w-12 h-12 border-4 border-transparent border-r-pink-600 rounded-full animate-spin" style={{ animationDelay: '0.5s', animationDuration: '1.5s' }}></div>
                     </div>
-                    <p className="text-purple-700 font-bold text-lg">Performing Advanced AI Analysis...</p>
+                    <p className="text-purple-700 font-bold text-lg">Performing Location-based AI Analysis...</p>
                     <p className="text-gray-600 text-sm mt-2">
                         Processing with computer vision • Environmental impact assessment • Location-based recommendations
                     </p>
+                    {location && (
+                        <div className="mt-4 inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            Analyzing waste at {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -289,7 +435,7 @@ const EnhancedImageUpload = () => {
                         <div className="flex items-center space-x-3">
                             <h3 className="font-bold text-2xl flex items-center">
                                 <Brain className="w-7 h-7 mr-3 text-purple-600" />
-                                Detailed Analysis Results
+                                Location-based Analysis Results
                             </h3>
                         </div>
                         <div className="flex items-center space-x-3">
@@ -299,18 +445,36 @@ const EnhancedImageUpload = () => {
                         </div>
                     </div>
 
-                    {/* Location Map */}
-                    <div className="mb-8 rounded-xl overflow-hidden shadow-lg">
-                        <iframe
-                            src={analysis.bingMapsUrl}
-                            className="w-full h-48"
-                            style={{ border: 0 }}
-                            allowFullScreen
-                            loading="lazy"
-                            referrerPolicy="no-referrer-when-downgrade"
-                            title="Analysis Location"
-                        />
-                    </div>
+                    {/* Enhanced Location Map with Details */}
+                    {mapsAvailable && (
+                        <div className="mb-8 rounded-xl overflow-hidden shadow-lg">
+                            <iframe
+                                src={analysis.bingMapsUrl}
+                                className="w-full h-48"
+                                style={{ border: 0 }}
+                                allowFullScreen
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                                title="Analysis Location"
+                            />
+                            <div className="bg-white p-4 border-t">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="font-semibold text-gray-900">📍 Analysis Location</p>
+                                        <p className="text-sm text-gray-600">
+                                            {analysis.locationDetails?.address || `${analysis.coordinates.lat.toFixed(6)}, ${analysis.coordinates.lng.toFixed(6)}`}
+                                        </p>
+                                    </div>
+                                    {analysis.coordinates.accuracy && (
+                                        <div className="text-right">
+                                            <p className="text-xs text-gray-500">Accuracy</p>
+                                            <p className="text-sm font-medium text-gray-700">±{Math.round(analysis.coordinates.accuracy)}m</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                         <div className="text-center p-5 bg-white rounded-xl shadow-sm border border-gray-100">
@@ -411,7 +575,7 @@ const EnhancedImageUpload = () => {
                             className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 hover:from-purple-700 hover:via-pink-700 hover:to-rose-700 text-white py-5 rounded-2xl font-bold text-xl transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl flex items-center justify-center space-x-3"
                         >
                             <Upload className="w-6 h-6" />
-                            <span>Submit Image Analysis Report</span>
+                            <span>Submit Location-based Report</span>
                         </button>
                     )}
                 </div>

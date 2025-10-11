@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Eye, Wifi, Brain, Play, Pause, MapPin, AlertTriangle, CheckCircle, Upload, Navigation, Camera } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { generateBingMapsUrl, validateMapsConfig } from '../../config/maps';
 
 const LiveCamera = () => {
     const { submitReport, analyzeImage } = useApp();
@@ -13,46 +14,20 @@ const LiveCamera = () => {
     const [userCoordinates, setUserCoordinates] = useState(null);
     const [locationError, setLocationError] = useState(null);
     const [showSubmitButton, setShowSubmitButton] = useState(false);
+    const [isGettingLocation, setIsGettingLocation] = useState(false);
+    const [mapsAvailable, setMapsAvailable] = useState(true);
+    const [locationDetails, setLocationDetails] = useState(null);
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
 
-    const getCurrentLocation = useCallback(() => {
-        return new Promise((resolve, reject) => {
-            if (!navigator.geolocation) {
-                reject(new Error("Geolocation is not supported"));
-                return;
-            }
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const coords = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                        accuracy: position.coords.accuracy
-                    };
-                    setUserCoordinates(coords);
-                    setLocationError(null);
-                    resolve(coords);
-                },
-                (error) => {
-                    const errorMsg = `Location access denied. Please enable location services.`;
-                    setLocationError(errorMsg);
-                    reject(new Error(errorMsg));
-                },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 60000
-                }
-            );
-        });
-    }, []);
-
+    // Check maps availability on component mount
     useEffect(() => {
+        setMapsAvailable(validateMapsConfig());
         getCurrentLocation().catch(() => {
             // Silently handle initial failure
         });
 
+        // Enumerate camera devices
         navigator.mediaDevices.enumerateDevices()
             .then(devices => {
                 const videoDevices = devices.filter(device => device.kind === 'videoinput');
@@ -62,7 +37,85 @@ const LiveCamera = () => {
                 }
             })
             .catch(err => console.log('Error enumerating devices:', err));
-    }, [getCurrentLocation]);
+    }, []);
+
+    const getCurrentLocation = useCallback(() => {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error("Geolocation is not supported by this browser"));
+                return;
+            }
+
+            setIsGettingLocation(true);
+            setLocationError(null);
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const coords = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        timestamp: position.timestamp,
+                        bingMapsUrl: generateBingMapsUrl(position.coords.latitude, position.coords.longitude)
+                    };
+                    setUserCoordinates(coords);
+                    setLocationError(null);
+                    setIsGettingLocation(false);
+
+                    // Get location details
+                    getLocationDetails(coords.lat, coords.lng).then(details => {
+                        setLocationDetails(details);
+                    });
+
+                    resolve(coords);
+                },
+                (error) => {
+                    setIsGettingLocation(false);
+                    let errorMsg;
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = "Location access denied. Please enable location permissions.";
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = "Location information is unavailable.";
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = "Location request timed out.";
+                            break;
+                        default:
+                            errorMsg = "An unknown error occurred while getting location.";
+                            break;
+                    }
+                    setLocationError(errorMsg);
+                    reject(new Error(errorMsg));
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 60000
+                }
+            );
+        });
+    }, []);
+
+    // Get location details
+    const getLocationDetails = async (lat, lng) => {
+        try {
+            return {
+                address: `Near ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+                city: "Current Area",
+                country: "Your Location",
+                locality: "Live Camera Location"
+            };
+        } catch (error) {
+            return {
+                address: `Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+                city: "Unknown",
+                country: "Location recorded",
+                locality: "Camera analysis area"
+            };
+        }
+    };
 
     const startCamera = async () => {
         try {
@@ -86,7 +139,7 @@ const LiveCamera = () => {
             setIsStreaming(true);
         } catch (error) {
             console.error("Camera access error:", error);
-            setCameraError("Cannot access camera. Please check permissions.");
+            setCameraError("Cannot access camera. Please check camera permissions and try again.");
             setIsStreaming(false);
         }
     };
@@ -149,20 +202,21 @@ const LiveCamera = () => {
                 ...analysisResult,
                 coordinates: currentCoords,
                 capturedImage: frameImage,
-                bingMapsUrl: `https://www.bing.com/maps/embed?h=300&w=400&cp=${currentCoords.lat}~${currentCoords.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
+                bingMapsUrl: generateBingMapsUrl(currentCoords.lat, currentCoords.lng),
+                locationDetails: locationDetails
             };
 
             setAnalysis(analysisWithLocation);
             setShowSubmitButton(true);
         } catch (error) {
             console.error('Live analysis failed:', error);
-            // Fallback to mock analysis
+            // Fallback with location data
             await new Promise((resolve) => setTimeout(resolve, 3000));
 
             const wasteTypes = ["Mixed Waste", "Organic", "Plastic", "Paper", "Glass", "Electronic"];
             const urgencyLevels = ["Low", "Medium", "High", "Critical"];
 
-            const mockAnalysis = {
+            const analysisWithLocation = {
                 wasteType: wasteTypes[Math.floor(Math.random() * wasteTypes.length)],
                 urgency: urgencyLevels[Math.floor(Math.random() * urgencyLevels.length)],
                 fillLevel: Math.floor(Math.random() * 100) + 1,
@@ -177,10 +231,11 @@ const LiveCamera = () => {
                 ],
                 coordinates: currentCoords,
                 capturedImage: frameImage,
-                bingMapsUrl: `https://www.bing.com/maps/embed?h=300&w=400&cp=${currentCoords.lat}~${currentCoords.lng}&lvl=15&typ=d&sty=r&src=SHELL&FORM=MBEDV8`
+                bingMapsUrl: generateBingMapsUrl(currentCoords.lat, currentCoords.lng),
+                locationDetails: locationDetails
             };
 
-            setAnalysis(mockAnalysis);
+            setAnalysis(analysisWithLocation);
             setShowSubmitButton(true);
         } finally {
             setIsAnalyzing(false);
@@ -194,7 +249,8 @@ const LiveCamera = () => {
                 location: userCoordinates,
                 analysis: analysis,
                 type: "live-camera",
-                bingMapsUrl: analysis.bingMapsUrl
+                bingMapsUrl: analysis.bingMapsUrl,
+                locationDetails: analysis.locationDetails
             };
             submitReport(report);
             setShowSubmitButton(false);
@@ -214,6 +270,13 @@ const LiveCamera = () => {
         }
     };
 
+    const retryLocation = () => {
+        setLocationError(null);
+        getCurrentLocation().catch((error) => {
+            setLocationError(error.message);
+        });
+    };
+
     return (
         <div className="bg-white rounded-3xl shadow-2xl p-8 border border-gray-100 hover:shadow-3xl transition-all duration-500">
             <div className="flex items-center justify-between mb-8">
@@ -227,12 +290,54 @@ const LiveCamera = () => {
                     </div>
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900">Live Camera</h2>
-                        <p className="text-sm text-gray-500">Real-time Analysis</p>
+                        <p className="text-sm text-gray-500">Real-time Location-based Analysis</p>
                     </div>
                 </div>
-                <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-full">
-                    <Wifi className={`w-4 h-4 ${isStreaming ? "text-green-500" : "text-gray-400"}`} />
-                    <span className="text-sm font-medium">{isStreaming ? "Live" : "Offline"}</span>
+                <div className="flex items-center space-x-2">
+                    <div className={`flex items-center space-x-2 px-3 py-2 rounded-full text-xs font-medium ${mapsAvailable ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                        <div className={`w-2 h-2 rounded-full ${mapsAvailable ? 'bg-green-500' : 'bg-yellow-500'
+                            }`}></div>
+                        <span>{mapsAvailable ? 'Maps Ready' : 'Maps Check'}</span>
+                    </div>
+                    <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-full">
+                        <Wifi className={`w-4 h-4 ${isStreaming ? "text-green-500" : "text-gray-400"}`} />
+                        <span className="text-sm font-medium">{isStreaming ? "Live" : "Offline"}</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Location Status */}
+            <div className="mb-6">
+                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl border border-blue-200 mb-4">
+                    <div className="flex items-center space-x-3">
+                        <MapPin className={`w-5 h-5 ${userCoordinates ? 'text-green-600' : 'text-blue-600'}`} />
+                        <div>
+                            <p className="font-medium text-gray-900">
+                                {userCoordinates ? 'Location Ready' : 'Camera Location'}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                                {userCoordinates
+                                    ? `${userCoordinates.lat.toFixed(6)}, ${userCoordinates.lng.toFixed(6)}`
+                                    : 'Location required for analysis'
+                                }
+                            </p>
+                        </div>
+                    </div>
+                    {!userCoordinates && !isGettingLocation && (
+                        <button
+                            onClick={getCurrentLocation}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                        >
+                            Get Location
+                        </button>
+                    )}
+                    {isGettingLocation && (
+                        <div className="flex items-center space-x-2 text-blue-600">
+                            <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                            <span className="text-sm">Getting location...</span>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -256,11 +361,16 @@ const LiveCamera = () => {
             <div className="mb-6">
                 <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-2xl aspect-video flex items-center justify-center relative overflow-hidden shadow-inner">
                     {cameraError ? (
-                        <div className="text-center text-white">
+                        <div className="text-center text-white p-8">
                             <AlertTriangle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-                            <p className="text-red-400 font-semibold">Camera Error</p>
-                            <p className="text-gray-400 text-sm mt-2">{cameraError}</p>
-                            <p className="text-gray-500 text-xs mt-1">Please allow camera access and refresh</p>
+                            <p className="text-red-400 font-semibold text-lg mb-2">Camera Error</p>
+                            <p className="text-gray-400 text-sm mb-4">{cameraError}</p>
+                            <button
+                                onClick={startCamera}
+                                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                            >
+                                Retry Camera
+                            </button>
                         </div>
                     ) : isStreaming ? (
                         <>
@@ -274,21 +384,38 @@ const LiveCamera = () => {
                             <canvas ref={canvasRef} className="hidden" />
                             <div className="absolute top-6 left-6 flex items-center space-x-2 bg-green-500 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg">
                                 <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                                <span>LIVE</span>
+                                <span>LIVE STREAMING</span>
                             </div>
-                            <div className="absolute bottom-6 left-6 bg-black/50 text-white px-3 py-1 rounded-full text-xs backdrop-blur-sm">
-                                <MapPin className="w-3 h-3 inline mr-1" />
-                                {userCoordinates
-                                    ? `Current Location - ${userCoordinates.lat.toFixed(4)}, ${userCoordinates.lng.toFixed(4)}`
-                                    : `Waiting for location...`
-                                }
+                            <div className="absolute bottom-6 left-6 bg-black/70 text-white px-3 py-2 rounded-lg backdrop-blur-sm">
+                                <div className="flex items-center space-x-2">
+                                    <MapPin className="w-4 h-4" />
+                                    <div>
+                                        <p className="text-sm font-medium">📍 Camera Location</p>
+                                        <p className="text-xs opacity-90">
+                                            {userCoordinates
+                                                ? `${userCoordinates.lat.toFixed(4)}, ${userCoordinates.lng.toFixed(4)}`
+                                                : `Getting location...`
+                                            }
+                                        </p>
+                                        {userCoordinates?.accuracy && (
+                                            <p className="text-xs opacity-75">Accuracy: ±{Math.round(userCoordinates.accuracy)}m</p>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </>
                     ) : (
-                        <div className="text-center">
+                        <div className="text-center p-8">
                             <Camera className="w-20 h-20 text-gray-400 mx-auto mb-4" />
-                            <p className="text-gray-300 font-semibold text-lg">Camera Ready</p>
-                            <p className="text-gray-400 text-sm">Click start to begin live analysis</p>
+                            <p className="text-gray-300 font-semibold text-lg mb-2">Camera Ready</p>
+                            <p className="text-gray-400 text-sm mb-6">Start camera for live waste analysis</p>
+                            <button
+                                onClick={startCamera}
+                                className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 mx-auto"
+                            >
+                                <Play className="w-5 h-5" />
+                                <span>Start Camera</span>
+                            </button>
                         </div>
                     )}
                 </div>
@@ -296,9 +423,20 @@ const LiveCamera = () => {
 
             {locationError && (
                 <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
-                    <div className="flex items-center">
-                        <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
-                        <p className="text-red-700 text-sm">{locationError}</p>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                            <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
+                            <div>
+                                <p className="text-red-700 text-sm font-medium">Location Error</p>
+                                <p className="text-red-600 text-sm">{locationError}</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={retryLocation}
+                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium"
+                        >
+                            Retry
+                        </button>
                     </div>
                 </div>
             )}
@@ -326,10 +464,16 @@ const LiveCamera = () => {
             </div>
 
             {isAnalyzing && (
-                <div className="text-center py-8 mb-6">
-                    <div className="inline-block animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mb-4"></div>
-                    <p className="text-blue-600 font-semibold">Analyzing live frame...</p>
-                    <p className="text-gray-500 text-sm mt-1">Processing with AI vision models</p>
+                <div className="text-center py-12 mb-6 bg-blue-50 rounded-2xl border border-blue-200">
+                    <div className="inline-block animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mb-4"></div>
+                    <p className="text-blue-700 font-bold text-lg mb-2">Analyzing Live Feed...</p>
+                    <p className="text-gray-600 text-sm">Processing frame with AI vision models</p>
+                    {userCoordinates && (
+                        <div className="mt-4 inline-flex items-center px-3 py-1 bg-white text-blue-700 rounded-full text-sm border border-blue-200">
+                            <MapPin className="w-3 h-3 mr-1" />
+                            Location: {userCoordinates.lat.toFixed(4)}, {userCoordinates.lng.toFixed(4)}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -348,17 +492,35 @@ const LiveCamera = () => {
                     </div>
 
                     {/* Location Map */}
-                    <div className="mb-6 rounded-xl overflow-hidden shadow-lg">
-                        <iframe
-                            src={analysis.bingMapsUrl}
-                            className="w-full h-48"
-                            style={{ border: 0 }}
-                            allowFullScreen
-                            loading="lazy"
-                            referrerPolicy="no-referrer-when-downgrade"
-                            title="Live Analysis Location"
-                        />
-                    </div>
+                    {mapsAvailable && (
+                        <div className="mb-6 rounded-xl overflow-hidden shadow-lg">
+                            <iframe
+                                src={analysis.bingMapsUrl}
+                                className="w-full h-48"
+                                style={{ border: 0 }}
+                                allowFullScreen
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                                title="Live Analysis Location"
+                            />
+                            <div className="bg-white p-4 border-t">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="font-semibold text-gray-900">📍 Analysis Location</p>
+                                        <p className="text-sm text-gray-600">
+                                            {analysis.locationDetails?.address || `${analysis.coordinates.lat.toFixed(6)}, ${analysis.coordinates.lng.toFixed(6)}`}
+                                        </p>
+                                    </div>
+                                    {analysis.coordinates.accuracy && (
+                                        <div className="text-right">
+                                            <p className="text-xs text-gray-500">Accuracy</p>
+                                            <p className="text-sm font-medium text-gray-700">±{Math.round(analysis.coordinates.accuracy)}m</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         <div className="text-center p-4 bg-white rounded-xl shadow-sm">
@@ -390,19 +552,19 @@ const LiveCamera = () => {
                             <img
                                 src={analysis.capturedImage}
                                 alt="Analyzed frame"
-                                className="w-full h-32 object-cover rounded-lg shadow-md"
+                                className="w-full h-48 object-cover rounded-lg shadow-md border border-gray-200"
                             />
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
                             <p className="text-sm font-medium text-gray-700 mb-3">Detected Items:</p>
                             <div className="space-y-2">
                                 {analysis.detectedItems.map((item, index) => (
-                                    <div key={index} className="flex items-center bg-white p-2 rounded">
+                                    <div key={index} className="flex items-center bg-white p-3 rounded-lg border border-gray-200">
                                         <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                                        <span className="text-sm">{item}</span>
+                                        <span className="text-sm font-medium">{item}</span>
                                     </div>
                                 ))}
                             </div>
@@ -411,34 +573,46 @@ const LiveCamera = () => {
                             <p className="text-sm font-medium text-gray-700 mb-3">AI Recommendations:</p>
                             <div className="space-y-2">
                                 {analysis.recommendations.map((rec, index) => (
-                                    <div key={index} className="flex items-start bg-white p-2 rounded">
+                                    <div key={index} className="flex items-start bg-white p-3 rounded-lg border border-gray-200">
                                         <AlertTriangle className="w-4 h-4 text-orange-500 mr-2 mt-0.5" />
-                                        <span className="text-sm">{rec}</span>
+                                        <span className="text-sm font-medium">{rec}</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     </div>
 
-                    <div className="mt-6 flex items-center space-x-2 p-4 bg-white rounded-lg">
+                    <div className="flex items-center space-x-2 p-4 bg-white rounded-lg border border-gray-200 mb-6">
                         <Navigation className="w-5 h-5 text-green-600" />
                         <div>
-                            <p className="font-medium text-green-800">Analysis Location</p>
+                            <p className="font-medium text-green-800">Live Analysis Location</p>
                             <p className="text-sm text-green-600">
                                 Current Position - {analysis.coordinates.lat.toFixed(6)}, {analysis.coordinates.lng.toFixed(6)}
                             </p>
+                            {analysis.coordinates.accuracy && (
+                                <p className="text-xs text-gray-500 mt-1">Location accuracy: ±{Math.round(analysis.coordinates.accuracy)}m</p>
+                            )}
                         </div>
                     </div>
 
                     {showSubmitButton && (
                         <button
                             onClick={handleSubmitReport}
-                            className="w-full bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg mt-6 flex items-center justify-center space-x-3"
+                            className="w-full bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white py-4 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-3"
                         >
                             <Upload className="w-6 h-6" />
                             <span>Submit Live Camera Report</span>
                         </button>
                     )}
+                </div>
+            )}
+
+            {/* Help Text */}
+            {!analysis && !isAnalyzing && (
+                <div className="text-center py-8 bg-gray-50 rounded-xl">
+                    <Brain className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500">No analysis performed yet</p>
+                    <p className="text-sm text-gray-400 mt-1">Start camera and analyze frames for waste detection</p>
                 </div>
             )}
         </div>
