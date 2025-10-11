@@ -1,11 +1,305 @@
-from flask import Blueprint, request, jsonify
-from app import db
-from app.models import Cameras, Reports, Statistics
+import uuid
+from app import app,db
+from app.models import User,Cameras,Statistics,Reports
+from predict import predict_and_annotate
+from config import Config
+from flask import request, jsonify, send_from_directory
 from datetime import datetime
 import base64
 from sqlalchemy import func
 
-app = Blueprint('api', __name__)
+import os 
+CLIENT = Config.CLIENT
+MODEL_ID = Config.MODEL_ID
+RESULTS_FOLDER = Config.RESULTS_FOLDER
+UPLOAD_FOLDER = Config.UPLOAD_FOLDER
+import uuid
+@app.route("/api/health", methods=["GET"])
+def health_check():
+    """Health check endpoint"""
+    return jsonify({
+        "status": "healthy",
+        "service": "WasteSpotter AI API",
+        "version": "1.0"
+    })
+
+
+@app.route("/api/analyze", methods=["POST"])
+def analyze_image():
+    """
+    Main analysis endpoint for React frontend
+    Expects: multipart/form-data with 'image' file
+    Returns: JSON with analysis results
+    """
+    if 'image' not in request.files:
+        return jsonify({
+            "success": False,
+            "error": "No image file provided"
+        }), 400
+
+    file = request.files['image']
+    
+    if file.filename == '':
+        return jsonify({
+            "success": False,
+            "error": "No file selected"
+        }), 400
+
+    # Save uploaded file
+    file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
+    filename = f"{uuid.uuid4().hex}.{file_ext}"
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    file.save(filepath)
+
+    # Run analysis
+    results = predict_and_annotate(filepath)
+    
+    if results.get("success"):
+        # Add image URL to response
+        results["annotated_image_url"] = f"/api/results/{results['output_image']}"
+        
+        # Extract prediction details
+        first_prediction = results.get("predictions", [{}])[0]
+        detected_class = first_prediction.get("class", "N/A")
+        confidence = first_prediction.get("confidence", 0.0)
+        confidence_percent = float(confidence) * 100
+        fullness = results.get("fullness", 0)
+        
+        # Determine priority based on fullness
+        if fullness <= 20:
+            priority = "Low"
+        elif fullness <= 60:
+            priority = "Medium"
+        else:
+            priority = "High"
+        
+        # Only save report if fullness > 50%
+        report_saved = False
+        report_id = None
+        
+        if fullness > 50:
+            try:
+                # Read the annotated image file
+                annotated_image_path = os.path.join(RESULTS_FOLDER, results['output_image'])
+                with open(annotated_image_path, 'rb') as img_file:
+                    img_byte_arr = img_file.read()
+                
+                # Extract location from request if provided
+                location = request.form.get('location', 'Nairobi')
+                
+                # Create new report
+                new_report = Reports(
+                    location=location,
+                    priority=priority,
+                    status="Pending",
+                    ai_confidence=int(confidence_percent),
+                    image_data=img_byte_arr,
+                    image_name=results['output_image']
+                )
+                
+                db.session.add(new_report)
+                db.session.commit()
+                
+                report_saved = True
+                report_id = new_report.id
+                
+                # Update statistics
+                update_statistics()
+                
+            except Exception as e:
+                db.session.rollback()
+                print(f"Error saving report: {str(e)}")
+                # Continue even if report saving fails
+        
+        # Prepare response
+        response_data = {
+            'success': True,
+            'data': {
+                'results': results,
+                'fullness': fullness,
+                'detected_class': detected_class,
+                'confidence': f"{confidence_percent:.2f}%",
+                'confidence_value': confidence_percent,
+                'priority': priority,
+                'annotated_image_url': results["annotated_image_url"],
+                'report_saved': report_saved,
+                'report_id': report_id,
+                'save_threshold': 50,
+                'message': f"Report {'saved' if report_saved else 'not saved'} - Fullness: {fullness}%"
+            }
+        }
+        
+        return jsonify(response_data), 200
+    else:
+        return jsonify(results), 500
+
+
+@app.route("/api/results/<filename>", methods=["GET"])
+def get_result_image(filename):
+    """Serve annotated result images"""
+    return send_from_directory(RESULTS_FOLDER, filename)
+
+
+@app.route("/api/batch-analyze", methods=["POST"])
+def batch_analyze():
+    """
+    Batch analysis endpoint for multiple images
+    """
+    if 'images' not in request.files:
+        return jsonify({
+            "success": False,
+            "error": "No images provided"
+        }), 400
+
+    files = request.files.getlist('images')
+    results = []
+    reports_saved = 0
+
+    for file in files:
+        if file.filename == '':
+            continue
+
+        # Save and analyze each file
+        file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else 'jpg'
+        filename = f"{uuid.uuid4().hex}.{file_ext}"
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(filepath)
+
+        analysis = predict_and_annotate(filepath)
+        
+        if analysis.get("success"):
+            analysis["annotated_image_url"] = f"/api/results/{analysis['output_image']}"
+            analysis["original_filename"] = file.filename
+            
+            # Extract details for report
+            first_prediction = analysis.get("predictions", [{}])[0]
+            confidence = first_prediction.get("confidence", 0.0)
+            confidence_percent = float(confidence) * 100
+            fullness = analysis.get("fullness", 0)
+            
+            # Determine priority
+            if fullness <= 20:
+                priority = "Low"
+            elif fullness <= 60:
+                priority = "Medium"
+            else:
+                priority = "High"
+            
+            analysis["priority"] = priority
+            analysis["confidence_percent"] = f"{confidence_percent:.2f}%"
+            
+            # Save report if fullness > 50%
+            if fullness > 50:
+                try:
+                    annotated_image_path = os.path.join(RESULTS_FOLDER, analysis['output_image'])
+                    with open(annotated_image_path, 'rb') as img_file:
+                        img_byte_arr = img_file.read()
+                    
+                    new_report = Reports(
+                        location='Batch Analysis',
+                        priority=priority,
+                        status="Pending",
+                        ai_confidence=int(confidence_percent),
+                        image_data=img_byte_arr,
+                        image_name=analysis['output_image']
+                    )
+                    
+                    db.session.add(new_report)
+                    db.session.commit()
+                    
+                    analysis["report_saved"] = True
+                    analysis["report_id"] = new_report.id
+                    reports_saved += 1
+                    
+                except Exception as e:
+                    db.session.rollback()
+                    print(f"Error saving batch report: {str(e)}")
+                    analysis["report_saved"] = False
+            else:
+                analysis["report_saved"] = False
+            
+            results.append(analysis)
+    
+    # Update statistics once after batch processing
+    if reports_saved > 0:
+        update_statistics()
+
+    return jsonify({
+        "success": True,
+        "count": len(results),
+        "reports_saved": reports_saved,
+        "results": results
+    }), 200
+
+
+def update_statistics():
+    """Helper function to update statistics based on reports"""
+    try:
+        # Get or create statistics record
+        stats = Statistics.query.first()
+        if not stats:
+            stats = Statistics(
+                imganalyzed=0,
+                wastedected=0,
+                avgconfidence=0,
+                detectionrate=0
+            )
+            db.session.add(stats)
+        
+        # Calculate statistics from reports
+        total_reports = Reports.query.count()
+        reports_with_images = Reports.query.filter(Reports.image_data.isnot(None)).count()
+        
+        # Calculate average confidence
+        avg_confidence_result = db.session.query(func.avg(Reports.ai_confidence)).scalar()
+        avg_confidence = int(avg_confidence_result) if avg_confidence_result else 0
+        
+        # Count waste detected (reports with confidence > 0)
+        waste_detected = Reports.query.filter(Reports.ai_confidence > 0).count()
+        
+        # Calculate detection rate (percentage of reports with high confidence)
+        detection_rate = int((waste_detected / total_reports * 100)) if total_reports > 0 else 0
+        
+        # Update statistics
+        stats.imganalyzed = reports_with_images
+        stats.wastedected = waste_detected
+        stats.avgconfidence = avg_confidence
+        stats.detectionrate = detection_rate
+        
+        db.session.commit()
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error updating statistics: {str(e)}")
+
+
+
+# Error Handlers
+
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({
+        "success": False,
+        "error": "Endpoint not found"
+    }), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({
+        "success": False,
+        "error": "Internal server error"
+    }), 500
+
+@app.route("/", methods=["GET"])
+@app.route("/index", methods=["GET"])
+@app.route("/home", methods=["GET"])
+@app.route("/dashboard", methods=["GET"])
+def index():
+    return jsonify({
+        "message": "Welcome to the WasteSpotter AI API. Use  to analyze images."
+    })
+
+
 
 # ===========================
 # CAMERA ROUTES
