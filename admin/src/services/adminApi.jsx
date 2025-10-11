@@ -1,5 +1,7 @@
 const API_BASE_URL = 'http://localhost:5000';
 
+
+
 class AdminApiService {
     constructor() {
         this.token = localStorage.getItem('wastespotter_admin_token');
@@ -15,81 +17,39 @@ class AdminApiService {
         localStorage.removeItem('wastespotter_admin_token');
     }
 
-    getHeaders() {
-        const headers = {
-            'Content-Type': 'application/json',
-        };
-
-        if (this.token) {
-            headers['Authorization'] = `Bearer ${this.token}`;
-        }
-
-        return headers;
+    async simulateDelay(ms = 1000) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    async request(endpoint, options = {}) {
-        const url = `${API_BASE_URL}${endpoint}`;
-        const config = {
-            headers: this.getHeaders(),
-            ...options
-        };
-
-        if (options.body) {
-            config.body = JSON.stringify(options.body);
-        }
-
-        try {
-            const response = await fetch(url, config);
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || `HTTP error! status: ${response.status}`);
-            }
-
-            return data;
-        } catch (error) {
-            console.error('Admin API request failed:', error);
-            throw error;
-        }
-    }
-
-    // Auth methods
+    // Mock login
     async login(credentials) {
-        const result = await this.request('/admin/login', {
-            method: 'POST',
-            body: credentials
-        });
+        await this.simulateDelay(1500);
 
-        this.setToken(result.access_token);
-        return result;
+        
+        if (credentials.email === "admin@wastespotter.com" && credentials.password === "admin123") {
+            const mockToken = "mock_jwt_token_" + Date.now();
+            this.setToken(mockToken);
+
+            return {
+                user: {
+                    id: 1,
+                    name: "System Administrator",
+                    email: credentials.email,
+                    role: "super_admin"
+                },
+                access_token: mockToken
+            };
+        } else {
+            throw new Error("Invalid credentials. Use: admin@wastespotter.com / admin123");
+        }
     }
 
-    // Report methods
-    async getReports(filters = {}) {
-        const params = new URLSearchParams();
-        Object.keys(filters).forEach(key => {
-            if (filters[key]) params.append(key, filters[key]);
-        });
-
-        return this.request(`/api/admin/reports?${params}`);
+    
     }
 
-    async updateReportStatus(reportId, status) {
-        return this.request(`/api/admin/reports/${reportId}`, {
-            method: 'PUT',
-            body: { status }
-        });
-    }
+    
 
-    async deleteReport(reportId) {
-        return this.request(`/api/admin/reports/${reportId}`, {
-            method: 'DELETE'
-        });
-    }
 
-    async getStats() {
-        return this.request('/api/admin/stats');
-    }
-}
+const adminApi = new AdminApiService();
 
-export default new AdminApiService();
+export default adminApi;
