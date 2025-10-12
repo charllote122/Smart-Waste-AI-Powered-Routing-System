@@ -56,22 +56,18 @@ def analyze_image():
     
     if results.get("success"):
         # Add image URL to response
-        results["annotated_image_url"] = f"/api/results/{results['output_image']}"
+        results["annotated_image_url"] = f"/app/results/{results['output_image']}"
         
         # Extract prediction details
-        first_prediction = results.get("predictions", [{}])[0]
-        detected_class = first_prediction.get("class", "N/A")
-        confidence = first_prediction.get("confidence", 0.0)
+
+        detected_class = results.get("wasteType") 
+        confidence = results.get("confidence")
         confidence_percent = float(confidence) * 100
-        fullness = results.get("fullness", 0)
+        fullness = results.get("fillLevel")
+        priority = results.get("urgency")
         
         # Determine priority based on fullness
-        if fullness <= 20:
-            priority = "Low"
-        elif fullness <= 60:
-            priority = "Medium"
-        else:
-            priority = "High"
+       
         
         # Only save report if fullness > 50%
         report_saved = False
@@ -128,8 +124,8 @@ def analyze_image():
                 'message': f"Report {'saved' if report_saved else 'not saved'} - Fullness: {fullness}%"
             }
         }
-        
-        return jsonify(response_data), 200
+        print(response_data)
+        return jsonify(results), 200
     else:
         return jsonify(results), 500
 
@@ -230,6 +226,7 @@ def batch_analyze():
         "reports_saved": reports_saved,
         "results": results
     }), 200
+    
 
 
 def update_statistics():

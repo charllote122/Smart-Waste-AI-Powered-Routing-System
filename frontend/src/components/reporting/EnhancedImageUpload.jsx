@@ -5,7 +5,7 @@ import apiService from '../../services/api';
 import { generateBingMapsUrl, validateMapsConfig } from '../../config/maps';
 
 const EnhancedImageUpload = () => {
-    const { submitReport, serverStatus } = useApp(); // Ensure serverStatus is provided by your context
+    const { submitReport,serverStatus} = useApp(); // Ensure serverStatus is provided by your context
     const [image, setImage] = useState(null);
     const [imageFile, setImageFile] = useState(null);
     const [annotatedImage, setAnnotatedImage] = useState(null);
@@ -77,16 +77,12 @@ const EnhancedImageUpload = () => {
             );
         });
     }, []);
-
+    
     const handleImageUpload = async (event) => {
         const file = event.target.files[0];
         if (!file) return;
 
-        // Check server status before proceeding
-        if (serverStatus === 'offline') {
-            setToastMessage("The server is unreachable right now.");
-            return; // Stop further processing if the server is offline
-        }
+       
 
         // Reset states
         setUploadError(null);

@@ -265,6 +265,7 @@ const ReportsView = () => {
                                                 {report.priority} Priority
                                             </span>
                                         </div>
+                                        
                                         <div className="absolute bottom-4 right-4">
                                             <button
                                                 onClick={() => downloadReportImage(report.id, report.image_name)}
@@ -286,7 +287,7 @@ const ReportsView = () => {
                                             <span>{report.status}</span>
                                         </span>
                                         <div className="flex items-center space-x-2 text-blue-600">
-                                            <span className="text-sm font-medium">{report.ai_confidence}% confident</span>
+                                            <span className="text-sm font-medium">{report.ai_confidence/100}% confident</span>
                                         </div>
                                     </div>
 
