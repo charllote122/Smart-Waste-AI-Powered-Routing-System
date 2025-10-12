@@ -21,14 +21,13 @@ const LiveCamera = () => {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
 
-    // Check maps availability on component mount
+    // Check maps availability and enumerate camera devices on component mount
     useEffect(() => {
         setMapsAvailable(validateMapsConfig());
         getCurrentLocation().catch(() => {
             // Silently handle initial failure
         });
 
-        // Enumerate camera devices
         navigator.mediaDevices.enumerateDevices()
             .then(devices => {
                 const videoDevices = devices.filter(device => device.kind === 'videoinput');
@@ -136,6 +135,7 @@ const LiveCamera = () => {
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
+                videoRef.current.play(); // Ensure the video plays
             }
             setIsStreaming(true);
         } catch (error) {
@@ -172,7 +172,6 @@ const LiveCamera = () => {
         return null;
     };
 
-    // Use your actual apiService.analyzeImage method
     const analyzeWithApiService = async (blob, currentCoords) => {
         try {
             console.log('Using apiService.analyzeImage...', {
@@ -182,7 +181,7 @@ const LiveCamera = () => {
             });
 
             // Validate the image file first
-            apiService.validateImageFile(blob, 10);
+            await apiService.validateImageFile(blob, 10);
 
             // Use your actual apiService.analyzeImage method
             const analysisResult = await apiService.analyzeImage(blob);
@@ -220,6 +219,12 @@ const LiveCamera = () => {
 
         const frameImage = captureFrame();
 
+        if (!frameImage) {
+            setCameraError("Failed to capture frame from video.");
+            setIsAnalyzing(false);
+            return;
+        }
+
         try {
             // Convert canvas to blob for API upload
             const blob = await new Promise(resolve => {
@@ -232,37 +237,27 @@ const LiveCamera = () => {
                 blobSize: blob.size
             });
 
-            // USE YOUR ACTUAL API SERVICE - NO MOCK DATA
             const analysisResult = await analyzeWithApiService(blob, currentCoords);
 
             console.log('Raw analysis result from API:', analysisResult);
 
             // Process the API response - use the actual data from your backend
             const analysisWithLocation = {
-                // Use actual API data from your backend
                 ...analysisResult,
-
-                // Map backend fields to expected frontend fields
-                wasteType: analysisResult.wasteType || analysisResult.type || analysisResult.detected_type || 'Unknown',
-                urgency: analysisResult.urgency || analysisResult.priority || analysisResult.severity || 'Medium',
-                confidence: analysisResult.confidence || analysisResult.accuracy || analysisResult.score || 0,
-                detectedItems: analysisResult.detectedItems || analysisResult.items || analysisResult.detections || [],
-                recommendations: analysisResult.recommendations || analysisResult.suggestions || analysisResult.actions || [],
-                environmentalImpact: analysisResult.environmentalImpact || analysisResult.impact || 1,
-                fillLevel: analysisResult.fillLevel || analysisResult.level || 0,
-                healthRisk: analysisResult.healthRisk || analysisResult.risk || 1,
-                estimatedWeight: analysisResult.estimatedWeight || analysisResult.weight || 0,
-
-                // Check for annotated image from backend
+                wasteType: analysisResult.wasteType || 'Unknown',
+                urgency: analysisResult.urgency || 'Medium',
+                confidence: analysisResult.confidence || 0,
+                detectedItems: analysisResult.detectedItems || [],
+                recommendations: analysisResult.recommendations || [],
+                environmentalImpact: analysisResult.environmentalImpact || 1,
+                fillLevel: analysisResult.fillLevel || 0,
+                healthRisk: analysisResult.healthRisk || 1,
+                estimatedWeight: analysisResult.estimatedWeight || 0,
                 annotatedImage: analysisResult.annotatedImage || analysisResult.processedImage || analysisResult.imageUrl,
-
-                // Add location and image data
                 coordinates: currentCoords,
                 capturedImage: frameImage,
                 bingMapsUrl: generateBingMapsUrl(currentCoords.lat, currentCoords.lng),
                 locationDetails: locationDetails,
-
-                // Mark as real API data
                 isMockData: false,
                 source: 'api-service'
             };
@@ -274,10 +269,7 @@ const LiveCamera = () => {
 
         } catch (error) {
             console.error('API analysis failed:', error);
-
-            // Show actual API error - NO MOCK DATA FALLBACK
             setCameraError(`Analysis failed: ${error.message}. Please try again.`);
-
         } finally {
             setIsAnalyzing(false);
         }
@@ -286,7 +278,7 @@ const LiveCamera = () => {
     const handleSubmitReport = () => {
         if (analysis && userCoordinates) {
             const report = {
-                image: analysis.annotatedImage || analysis.capturedImage, // Use annotated image if available
+                image: analysis.annotatedImage || analysis.capturedImage,
                 originalImage: analysis.capturedImage,
                 location: userCoordinates,
                 analysis: analysis,
@@ -324,7 +316,6 @@ const LiveCamera = () => {
         });
     };
 
-    // Check if we have an annotated image to display
     const getDisplayImage = () => {
         return analysis?.annotatedImage || analysis?.capturedImage;
     };
