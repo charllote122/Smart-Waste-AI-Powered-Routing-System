@@ -233,7 +233,7 @@ def index():
     return jsonify({
         "message": "Welcome to the WasteSpotter AI API. Use  to analyze images."
     })
-
+  
 # ---------------------------
 # Run App
 # ---------------------------
