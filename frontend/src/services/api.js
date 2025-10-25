@@ -1,6 +1,7 @@
+// api.js
 import axios from 'axios';
 
-const API_BASE_URL = 'https://1ktn0531-5000.euw.devtunnels.ms/api';
+const API_BASE_URL = 'http://127.0.0.1:5000/api';
 
 // Configuration
 const config = {
