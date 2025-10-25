@@ -9,20 +9,48 @@ const Header = () => {
     const location = useLocation();
     const currentPage = location.pathname;
     const [mapsStatus, setMapsStatus] = useState('checking');
+    const [showServerStatus, setShowServerStatus] = useState(true);
+    const [showMapsStatus, setShowMapsStatus] = useState(true);
 
     useEffect(() => {
         setMapsStatus(validateMapsConfig() ? 'available' : 'unavailable');
-    }, []);
 
-    const isActive = (path) => {
-        return currentPage === path;
+        if (serverStatus === 'connected' && mapsStatus === 'available') {
+            const timer = setTimeout(() => {
+                setShowServerStatus(false);
+                setShowMapsStatus(false);
+            }, 180000); // 3 minutes in milliseconds
+
+            return () => clearTimeout(timer); // Cleanup timer on unmount
+        } else {
+            // Reset visibility if server or maps is offline
+            setShowServerStatus(true);
+            setShowMapsStatus(true);
+        }
+    }, [serverStatus, mapsStatus]);
+
+    const handleMapsOfflineClick = () => {
+        if (mapsStatus === 'unavailable') {
+            // Request location permission logic
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        console.log('Location access granted:', position);
+                    },
+                    (error) => {
+                        console.error('Location access denied:', error);
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by this browser.');
+            }
+        }
     };
 
     return (
         <header className="bg-white shadow-xl border-b sticky top-0 z-50 backdrop-blur-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 <div className="flex items-center justify-between">
-                    {/* Logo and Server Status */}
                     <div className="flex items-center space-x-4">
                         <Link to="/" className="flex items-center space-x-4 hover:opacity-80 transition-opacity">
                             <div className="relative">
@@ -42,30 +70,34 @@ const Header = () => {
                         {/* Status Indicators */}
                         <div className="flex items-center space-x-2">
                             {/* Server Status Indicator */}
-                            <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium ${serverStatus === 'connected' ? 'bg-green-100 text-green-800' :
-                                    serverStatus === 'disconnected' ? 'bg-red-100 text-red-800' :
-                                        'bg-yellow-100 text-yellow-800'
-                                }`}>
-                                <div className={`w-2 h-2 rounded-full ${serverStatus === 'connected' ? 'bg-green-500' :
-                                        serverStatus === 'disconnected' ? 'bg-red-500' :
-                                            'bg-yellow-500 animate-pulse'
-                                    }`}></div>
-                                <span>
-                                    {serverStatus === 'connected' ? 'Server Connected' :
-                                        serverStatus === 'disconnected' ? 'Server Offline' :
-                                            'Checking Connection...'}
-                                </span>
-                            </div>
+                            {showServerStatus && (
+                                <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium ${serverStatus === 'connected' ? 'bg-green-100 text-green-800' :
+                                        serverStatus === 'disconnected' ? 'bg-red-100 text-red-800' :
+                                            'bg-yellow-100 text-yellow-800'
+                                    }`}>
+                                    <div className={`w-2 h-2 rounded-full ${serverStatus === 'connected' ? 'bg-green-500' :
+                                            serverStatus === 'disconnected' ? 'bg-red-500' :
+                                                'bg-yellow-500 animate-pulse'
+                                        }`}></div>
+                                    <span>
+                                        {serverStatus === 'connected' ? 'Server Connected' :
+                                            serverStatus === 'disconnected' ? 'Server Under Maintenance' :
+                                                'Checking Connection...'}
+                                    </span>
+                                </div>
+                            )}
 
                             {/* Maps Status Indicator */}
-                            <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium ${mapsStatus === 'available' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                                }`}>
-                                <MapPin className={`w-3 h-3 ${mapsStatus === 'available' ? 'text-green-500' : 'text-yellow-500'
-                                    }`} />
-                                <span>
-                                    {mapsStatus === 'available' ? 'Maps Ready' : 'Maps Check'}
-                                </span>
-                            </div>
+                            {showMapsStatus && (
+                                <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium ${mapsStatus === 'available' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                    }`} onClick={handleMapsOfflineClick}>
+                                    <MapPin className={`w-3 h-3 ${mapsStatus === 'available' ? 'text-green-500' : 'text-yellow-500'
+                                        }`} />
+                                    <span>
+                                        {mapsStatus === 'available' ? 'Maps Ready' : 'Maps Offline'}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     </div>
 

@@ -18,9 +18,15 @@ const ReportPage = () => {
                 </div>
 
                 <div className="grid lg:grid-cols-1 xl:grid-cols-3 gap-8">
-                    <CCTVMonitoring />
-                    <LiveCamera />
-                    <EnhancedImageUpload />
+                   
+                        <CCTVMonitoring />
+                    
+                    
+                        <LiveCamera />
+                 
+                   
+                        <EnhancedImageUpload />
+                   
                 </div>
             </div>
         </div>

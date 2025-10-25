@@ -1,11 +1,11 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Upload, Camera, Brain, AlertTriangle, CheckCircle, Navigation, Trash2, Shield, Award, Zap, MapPin } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import apiService from '../../services/api';
 import { generateBingMapsUrl, validateMapsConfig } from '../../config/maps';
 
 const EnhancedImageUpload = () => {
-    const { submitReport } = useApp();
+    const { submitReport,serverStatus} = useApp(); // Ensure serverStatus is provided by your context
     const [image, setImage] = useState(null);
     const [imageFile, setImageFile] = useState(null);
     const [annotatedImage, setAnnotatedImage] = useState(null);
@@ -17,10 +17,11 @@ const EnhancedImageUpload = () => {
     const [showSubmitButton, setShowSubmitButton] = useState(false);
     const [isGettingLocation, setIsGettingLocation] = useState(false);
     const [mapsAvailable, setMapsAvailable] = useState(true);
+    const [toastMessage, setToastMessage] = useState(null);
     const fileInputRef = useRef(null);
 
     // Check maps availability on component mount
-    React.useEffect(() => {
+    useEffect(() => {
         setMapsAvailable(validateMapsConfig());
     }, []);
 
@@ -76,10 +77,12 @@ const EnhancedImageUpload = () => {
             );
         });
     }, []);
-
+    
     const handleImageUpload = async (event) => {
         const file = event.target.files[0];
         if (!file) return;
+
+       
 
         // Reset states
         setUploadError(null);
@@ -90,7 +93,7 @@ const EnhancedImageUpload = () => {
 
         try {
             // Validate image file using API service
-            apiService.validateImageFile(file, 10);
+            await apiService.validateImageFile(file, 10);
 
             const reader = new FileReader();
 
@@ -112,22 +115,17 @@ const EnhancedImageUpload = () => {
 
             reader.onerror = () => {
                 setUploadError('Failed to read image file');
-                if (fileInputRef.current) {
-                    fileInputRef.current.value = "";
-                }
+                resetFileInput();
             };
 
             reader.readAsDataURL(file);
 
         } catch (error) {
             setUploadError(error.message);
-            if (fileInputRef.current) {
-                fileInputRef.current.value = "";
-            }
+            resetFileInput();
         }
     };
 
-    // Use your actual apiService.analyzeImage method
     const performBackendAnalysis = async (file, locationCoords) => {
         if (!locationCoords) {
             setLocationError("Location required for analysis");
@@ -146,8 +144,8 @@ const EnhancedImageUpload = () => {
                 location: locationCoords
             });
 
-            // Use your actual apiService.analyzeImage method
-            const analysisResult = await apiService.analyzeImage(file);
+            // Call the actual API service to analyze the image
+            const analysisResult = await apiService.analyzeImage(file, locationCoords);
 
             console.log('apiService.analyzeImage result:', analysisResult);
 
@@ -160,26 +158,15 @@ const EnhancedImageUpload = () => {
 
         } catch (error) {
             console.error('apiService.analyzeImage failed:', error);
-
-            // Show actual API error - NO MOCK DATA FALLBACK
             setUploadError(`Analysis failed: ${error.message}. Please try again.`);
-
         } finally {
             setIsAnalyzing(false);
         }
     };
 
-    // Process backend response
     const processBackendResponse = (backendResult, locationCoords) => {
         // Extract annotated image from backend response
-        let annotatedImageUrl = null;
-        if (backendResult.annotatedImage) {
-            annotatedImageUrl = backendResult.annotatedImage;
-        } else if (backendResult.imageUrl) {
-            annotatedImageUrl = backendResult.imageUrl;
-        } else if (backendResult.processedImage) {
-            annotatedImageUrl = backendResult.processedImage;
-        }
+        let annotatedImageUrl = backendResult.annotatedImage || backendResult.imageUrl || backendResult.processedImage;
 
         // Set the annotated image
         if (annotatedImageUrl) {
@@ -187,33 +174,25 @@ const EnhancedImageUpload = () => {
             console.log('Annotated image set from backend');
         } else {
             console.log('No annotated image in backend response');
-            // Keep the original image if no annotated image
-            setAnnotatedImage(image);
+            setAnnotatedImage(image); // Keep the original image if no annotated image
         }
 
         // Create analysis object from backend data
         const analysisWithLocation = {
-            // Use the actual backend data
             ...backendResult,
-
-            // Map backend fields to expected frontend fields
-            wasteType: backendResult.wasteType || backendResult.type || backendResult.detected_type || 'Unknown',
-            urgency: backendResult.urgency || backendResult.priority || backendResult.severity || 'Medium',
-            confidence: backendResult.confidence || backendResult.accuracy || backendResult.score || 0,
-            detectedItems: backendResult.detectedItems || backendResult.items || backendResult.detections || [],
-            recommendations: backendResult.recommendations || backendResult.suggestions || backendResult.actions || [],
-            healthRisk: backendResult.healthRisk || backendResult.risk || backendResult.danger_level || 1,
-            estimatedWeight: backendResult.estimatedWeight || backendResult.weight || backendResult.volume || 0,
-            environmentalImpact: backendResult.environmentalImpact || backendResult.impact || 1,
-            fillLevel: backendResult.fillLevel || backendResult.level || 0,
-
-            // Add location data
+            wasteType: backendResult.wasteType || 'Unknown',
+            urgency: backendResult.urgency || 'Medium',
+            confidence: backendResult.confidence || 0,
+            detectedItems: backendResult.detectedItems || [],
+            recommendations: backendResult.recommendations || [],
+            healthRisk: backendResult.healthRisk || 1,
+            estimatedWeight: backendResult.estimatedWeight || 0,
+            environmentalImpact: backendResult.environmentalImpact || 1,
+            fillLevel: backendResult.fillLevel || 0,
             coordinates: locationCoords,
             bingMapsUrl: locationCoords.bingMapsUrl,
             locationDetails: getLocationDetails(locationCoords.lat, locationCoords.lng),
             annotatedImage: annotatedImageUrl,
-
-            // Mark as real backend data
             isMockData: false,
             source: 'api-service'
         };
@@ -224,7 +203,6 @@ const EnhancedImageUpload = () => {
         setShowSubmitButton(true);
     };
 
-    // Get human-readable location details
     const getLocationDetails = (lat, lng) => {
         return {
             address: `Near ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
@@ -252,35 +230,37 @@ const EnhancedImageUpload = () => {
             };
 
             console.log('Submitting report with backend data:', report);
-            submitReport(report);
 
-            // Reset form
-            setShowSubmitButton(false);
-            setImage(null);
-            setAnnotatedImage(null);
-            setImageFile(null);
-            setLocation(null);
-            setAnalysis(null);
-            setLocationError(null);
-            setUploadError(null);
-
-            if (fileInputRef.current) {
-                fileInputRef.current.value = "";
+            // Check server status before submitting
+            if (serverStatus === 'offline') {
+                setToastMessage("The server is unreachable right now.");
+            } else {
+                submitReport(report);
+                resetForm();
             }
         }
     };
 
-    const removeImage = () => {
+    const resetForm = () => {
+        setShowSubmitButton(false);
         setImage(null);
         setAnnotatedImage(null);
         setImageFile(null);
+        setLocation(null);
         setAnalysis(null);
-        setShowSubmitButton(false);
-        setUploadError(null);
         setLocationError(null);
+        setUploadError(null);
+        resetFileInput();
+    };
+
+    const resetFileInput = () => {
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
+    };
+
+    const removeImage = () => {
+        resetForm();
     };
 
     const retryLocation = () => {
@@ -296,7 +276,6 @@ const EnhancedImageUpload = () => {
         }
     };
 
-    // Safe coordinate display function
     const displayCoordinates = (coords) => {
         if (!coords || typeof coords.lat !== 'number' || typeof coords.lng !== 'number') {
             return 'Location not available';
@@ -304,13 +283,11 @@ const EnhancedImageUpload = () => {
         return `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
     };
 
-    // Safe accuracy display function
     const displayAccuracy = (coords) => {
         if (!coords || !coords.accuracy) return null;
         return `Accuracy: ±${Math.round(coords.accuracy)}m`;
     };
 
-    // Determine which image to display
     const getDisplayImage = () => {
         return annotatedImage || image;
     };
@@ -672,6 +649,13 @@ const EnhancedImageUpload = () => {
                             <span>Submit Analysis Report</span>
                         </button>
                     )}
+                </div>
+            )}
+
+            {/* Toast Notification */}
+            {toastMessage && (
+                <div className="fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg transition-opacity duration-300">
+                    {toastMessage}
                 </div>
             )}
         </div>

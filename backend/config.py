@@ -4,11 +4,11 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Config():
     
-    UPLOAD_FOLDER = "uploads"
-    RESULTS_FOLDER = "results"
+    UPLOAD_FOLDER = os.path.join(basedir,'app','uploads')
+    RESULTS_FOLDER = os.path.join(basedir,'app','results')
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     os.makedirs(RESULTS_FOLDER, exist_ok=True)
-
+    
     # Roboflow API Setup
 
     CLIENT = InferenceHTTPClient(

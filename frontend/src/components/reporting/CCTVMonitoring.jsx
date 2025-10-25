@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Monitor, MapPin, Brain, Play, Pause, Clock, AlertTriangle, Upload } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { generateBingMapsUrl, validateMapsConfig } from '../../config/maps';
+import axios from 'axios'; // Import axios for API calls
 
 const CCTVMonitoring = () => {
     const { submitReport } = useApp();
@@ -82,7 +83,7 @@ const CCTVMonitoring = () => {
                 setCountdown((prev) => {
                     if (prev <= 1) {
                         generateAutomaticReport();
-                        return 600;
+                        return 600; // Reset countdown after report generation
                     }
                     return prev - 1;
                 });
@@ -102,6 +103,7 @@ const CCTVMonitoring = () => {
             }
         }
 
+        // Simulate analysis data
         const wasteTypes = ["Mixed Waste", "Organic", "Plastic", "Paper", "Glass"];
         const urgencyLevels = ["Low", "Medium", "High", "Critical"];
 
@@ -118,7 +120,7 @@ const CCTVMonitoring = () => {
         setShowSubmitButton(true);
     };
 
-    const handleSubmitReport = () => {
+    const handleSubmitReport = async () => {
         if (lastAnalysis && userCoordinates) {
             const report = {
                 camera: "CCTV Auto-Detection",
@@ -127,9 +129,18 @@ const CCTVMonitoring = () => {
                 location: userCoordinates,
                 bingMapsUrl: generateBingMapsUrl(userCoordinates.lat, userCoordinates.lng)
             };
-            submitReport(report);
-            setShowSubmitButton(false);
-            setLastAnalysis(null);
+
+            try {
+                // Send report to the backend API
+                await axios.post('/api/reports', report);
+                alert("Report submitted successfully!"); // Notify user of success
+                submitReport(report); // Call the context function if needed
+                setShowSubmitButton(false);
+                setLastAnalysis(null);
+            } catch (error) {
+                console.error("Error submitting report:", error);
+                alert("Failed to submit report. Please try again."); // Notify user of failure
+            }
         }
     };
 
