@@ -5,24 +5,18 @@ import Header from './components/common/Header';
 import HomePage from './pages/HomePage';
 import ReportPage from './pages/ReportPage';
 import ReportsPage from './pages/ReportsPage';
-import Analytics from './pages/Analytics'
 import AuthSystem from './components/common/AuthSystem';
 import SuccessModal from './components/common/SuccessModal';
-import HeroSection from './components/common/HeroSection';
 
 const AppContent = () => {
-
   return (
-   
     <div className="min-h-screen bg-gray-50">
-      
       <Header />
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/report" element={<ReportPage />} />
           <Route path="/reports" element={<ReportsPage />} />
-
           {/* Add a catch-all route for debugging */}
           <Route path="*" element={<div className="p-8 text-center">Route not found</div>} />
         </Routes>
