@@ -26,37 +26,37 @@ export const AppProvider = ({ children }) => {
     const [error, setError] = useState(null);
     const [notifications, setNotifications] = useState([]);
 
-    // Get current page from router location
     const currentPage = location.pathname;
 
-    // Check server connection on app start with retry logic
+    // Initialize app - check server and load data
     useEffect(() => {
         checkServerConnection();
         loadCameras();
-        loadReportsFromStorage();
+        loadReports();
 
-        // Set up periodic health checks
+        // Set up periodic health checks every 30 seconds
         const healthCheckInterval = setInterval(() => {
             checkServerConnection();
-        }, 30000); // Check every 30 seconds
+        }, 30000);
 
         return () => clearInterval(healthCheckInterval);
     }, []);
 
-    // Enhanced server connection check with retry
+    // Check server connection - FIXED to handle boolean return
     const checkServerConnection = useCallback(async () => {
         try {
             setServerStatus('checking');
-            const health = await apiService.checkServerConnection();
-            setServerStatus(health.connected ? 'connected' : 'disconnected');
+            const isConnected = await apiService.checkServerConnection();
+            setServerStatus(isConnected ? 'connected' : 'disconnected');
 
-            if (health.connected && error?.type === 'server') {
+            if (isConnected && error?.type === 'server') {
                 setError(null);
                 addNotification('Server connection restored', 'success');
             }
         } catch (error) {
+            console.error('Server connection check failed:', error);
             setServerStatus('disconnected');
-            if (error.type !== 'server') {
+            if (error?.type !== 'server') {
                 setError({
                     type: 'server',
                     message: 'Unable to connect to server. Some features may be limited.'
@@ -65,53 +65,61 @@ export const AppProvider = ({ children }) => {
         }
     }, [error]);
 
-    // Load cameras with real API integration
+    // Load cameras from real API
     const loadCameras = useCallback(async () => {
         try {
-            // Try real API first, fallback to mock data
-            const camerasData = await apiService.request('/cameras', { method: 'GET' });
-            setCameras(camerasData);
+            const response = await apiService.getCameras();
+            // Backend returns { count, cameras }
+            const camerasData = response.cameras || [];
+            
+            // Transform backend data to match frontend format
+            const formattedCameras = camerasData.map(camera => ({
+                id: camera.id,
+                name: camera.name,
+                location: camera.location,
+                status: camera.status === 1 ? 'online' : 'offline',
+                ipaddress: camera.ipaddress,
+                lastActive: new Date(),
+                streamUrl: `/api/stream/${camera.id}`
+            }));
+            
+            setCameras(formattedCameras);
         } catch (error) {
-            console.warn('Using mock camera data:', error.message);
-            const mockCameras = [
-                {
-                    id: 1,
-                    name: "Camera 1 - CBD Area",
-                    location: "Central Business District",
-                    status: 'online',
-                    lastActive: new Date(),
-                    streamUrl: '/api/stream/1'
-                },
-                {
-                    id: 2,
-                    name: "Camera 2 - Market Zone",
-                    location: "Main Market Area",
-                    status: 'online',
-                    lastActive: new Date(),
-                    streamUrl: '/api/stream/2'
-                },
-                {
-                    id: 3,
-                    name: "Camera 3 - Residential Sector",
-                    location: "Residential Zone",
-                    status: 'offline',
-                    lastActive: new Date(Date.now() - 3600000),
-                    streamUrl: '/api/stream/3'
-                },
-                {
-                    id: 4,
-                    name: "Camera 4 - Industrial District",
-                    location: "Industrial Area",
-                    status: 'online',
-                    lastActive: new Date(),
-                    streamUrl: '/api/stream/4'
-                }
-            ];
-            setCameras(mockCameras);
+            console.error('Failed to load cameras:', error);
+            addNotification('Failed to load cameras', 'error');
+            setCameras([]);
         }
     }, []);
 
-    // Navigation function with analytics
+    // Load reports from real API
+    const loadReports = useCallback(async () => {
+        try {
+            const response = await apiService.getReports();
+            // Backend returns { count, reports }
+            const reportsData = response.reports || [];
+            
+            // Transform backend data to match frontend format
+            const formattedReports = reportsData.map(report => ({
+                id: report.id,
+                location: report.location,
+                priority: report.priority,
+                status: report.status,
+                confidence: report.ai_confidence,
+                timestamp: new Date(report.reportedAt),
+                reportId: `RPT-${report.id}`,
+                hasImage: report.has_image,
+                imageName: report.image_name
+            }));
+            
+            setReports(formattedReports);
+        } catch (error) {
+            console.error('Failed to load reports:', error);
+            addNotification('Failed to load reports', 'error');
+            setReports([]);
+        }
+    }, []);
+
+    // Navigation function
     const setCurrentPage = useCallback((path, options = {}) => {
         const { replace = false, state = {} } = options;
 
@@ -120,17 +128,9 @@ export const AppProvider = ({ children }) => {
         } else {
             navigate(path, { state });
         }
-
-        // Track page views for analytics
-        if (window.gtag) {
-            window.gtag('config', 'GA_MEASUREMENT_ID', {
-                page_title: document.title,
-                page_location: window.location.origin + path
-            });
-        }
     }, [navigate]);
 
-    // Enhanced user loading with validation
+    // User loading with token validation
     useEffect(() => {
         const loadUser = async () => {
             const storedUser = localStorage.getItem('wasteSpotterUser');
@@ -138,19 +138,10 @@ export const AppProvider = ({ children }) => {
                 try {
                     const userData = JSON.parse(storedUser);
 
-                    // Validate token with backend
                     if (userData.token) {
                         apiService.setAuthToken(userData.token);
-
-                        // Verify token is still valid
-                        try {
-                            const currentUser = await apiService.getCurrentUser();
-                            setUser({ ...userData, ...currentUser });
-                        } catch (error) {
-                            // Token is invalid, clear local storage
-                            console.warn('Token validation failed:', error);
-                            logout();
-                        }
+                        // Note: Add token verification endpoint in backend if needed
+                        setUser(userData);
                     } else {
                         setUser(userData);
                     }
@@ -164,29 +155,28 @@ export const AppProvider = ({ children }) => {
         loadUser();
     }, []);
 
-    // Enhanced authentication functions with real API
+    // Authentication functions (add these endpoints to your Flask backend)
     const login = async (userData) => {
         setLoading(true);
         setError(null);
 
         try {
-            // Use real API for authentication
-            const response = await apiService.login(userData.email, userData.password);
-
-            const userWithToken = {
-                ...response.user,
-                token: response.token,
+            // For now, use mock login until backend auth is implemented
+            const mockUser = {
+                id: 1,
+                email: userData.email,
+                name: userData.email.split('@')[0],
+                token: 'mock-token-' + Date.now(),
                 lastLogin: new Date()
             };
 
-            setUser(userWithToken);
+            setUser(mockUser);
             setAuthMode(null);
-            apiService.setAuthToken(userWithToken.token);
-            localStorage.setItem('wasteSpotterUser', JSON.stringify(userWithToken));
+            apiService.setAuthToken(mockUser.token);
+            localStorage.setItem('wasteSpotterUser', JSON.stringify(mockUser));
 
             addNotification('Login successful!', 'success');
-
-            return response;
+            return mockUser;
         } catch (error) {
             const message = error.message || 'Login failed. Please check your credentials.';
             setError({ type: 'auth', message });
@@ -202,24 +192,23 @@ export const AppProvider = ({ children }) => {
         setError(null);
 
         try {
-            // Use real API for registration
-            const response = await apiService.register(userData);
-
-            const userWithToken = {
-                ...response.user,
-                token: response.token,
+            // For now, use mock registration until backend auth is implemented
+            const mockUser = {
+                id: Date.now(),
+                email: userData.email,
+                name: userData.name || userData.email.split('@')[0],
+                token: 'mock-token-' + Date.now(),
                 joinDate: new Date(),
                 lastLogin: new Date()
             };
 
-            setUser(userWithToken);
+            setUser(mockUser);
             setAuthMode(null);
-            apiService.setAuthToken(userWithToken.token);
-            localStorage.setItem('wasteSpotterUser', JSON.stringify(userWithToken));
+            apiService.setAuthToken(mockUser.token);
+            localStorage.setItem('wasteSpotterUser', JSON.stringify(mockUser));
 
             addNotification('Account created successfully!', 'success');
-
-            return response;
+            return mockUser;
         } catch (error) {
             const message = error.message || 'Registration failed. Please try again.';
             setError({ type: 'auth', message });
@@ -231,106 +220,69 @@ export const AppProvider = ({ children }) => {
     };
 
     const logout = useCallback(() => {
-        // Call logout API
-        apiService.logout().catch(console.error);
-
         setUser(null);
         setAuthMode(null);
         apiService.clearAuthToken();
         localStorage.removeItem('wasteSpotterUser');
-        setReports(prev => prev.filter(report => !report.userId)); // Clear user-specific reports
 
         addNotification('Logged out successfully', 'info');
         navigate('/');
     }, [navigate]);
 
-    // Enhanced report management with persistence
-    const loadReportsFromStorage = useCallback(() => {
-        try {
-            const storedReports = localStorage.getItem('wasteSpotterReports');
-            if (storedReports) {
-                const reportsData = JSON.parse(storedReports);
-                setReports(reportsData.map(report => ({
-                    ...report,
-                    timestamp: new Date(report.timestamp)
-                })));
-            }
-        } catch (error) {
-            console.error('Failed to load reports from storage:', error);
-        }
-    }, []);
-
-    const saveReportsToStorage = useCallback((reportsData) => {
-        try {
-            localStorage.setItem('wasteSpotterReports', JSON.stringify(reportsData));
-        } catch (error) {
-            console.error('Failed to save reports to storage:', error);
-        }
-    }, []);
-
+    // Submit report using real API
     const submitReport = async (report) => {
         setLoading(true);
         setError(null);
 
         try {
-            const reportWithUser = user ? {
-                ...report,
-                userId: user.id,
-                userName: user.name
-            } : report;
-
-            const newReport = {
-                ...reportWithUser,
-                id: Date.now(),
-                timestamp: new Date(),
-                status: 'pending',
-                reportId: `RPT-${Date.now()}`
-            };
-
-            // Try real API first
-            try {
-                const response = await apiService.request('/reports', {
-                    method: 'POST',
-                    data: newReport
+            // If we have an imageFile, analyze it first (which creates the report automatically)
+            if (report.imageFile) {
+                // Analyze the image - backend will create report if fillLevel > 50%
+                const analysis = await apiService.analyzeImage(report.imageFile, {
+                    location: report.location || 'Unknown Location'
                 });
-                newReport.id = response.id; // Use server-generated ID
-            } catch (apiError) {
-                console.warn('Using local storage for report:', apiError.message);
-                // Continue with local storage fallback
+
+                // Backend automatically creates report, so just reload reports
+                await loadReports();
+                
+                setShowSuccessModal(true);
+                addNotification('Image analyzed and report created!', 'success');
+                
+                return analysis;
+            } else {
+                // Manual report without image
+                const reportData = {
+                    location: report.location || 'Unknown Location',
+                    priority: report.priority || 'Medium',
+                    status: 'Pending',
+                    ai_confidence: Math.round(report.confidence || 0)
+                };
+
+                const response = await apiService.createReport(reportData);
+                
+                const newReport = {
+                    id: response.report.id,
+                    location: response.report.location,
+                    priority: response.report.priority,
+                    status: response.report.status,
+                    confidence: response.report.ai_confidence,
+                    timestamp: new Date(response.report.reportedAt),
+                    reportId: `RPT-${response.report.id}`,
+                    hasImage: response.report.has_image,
+                    imageName: response.report.image_name
+                };
+
+                setReports(prev => [newReport, ...prev]);
+                setShowSuccessModal(true);
+                addNotification('Report submitted successfully!', 'success');
+
+                setTimeout(() => loadReports(), 500);
+
+                return newReport;
             }
-
-            setReports(prev => {
-                const updatedReports = [newReport, ...prev];
-                saveReportsToStorage(updatedReports);
-                return updatedReports;
-            });
-
-            setShowSuccessModal(true);
-            addNotification('Report submitted successfully!', 'success');
-
-            // Simulate status progression for demo
-            if (process.env.NODE_ENV === 'development') {
-                setTimeout(() => {
-                    setReports(prev => prev.map(r =>
-                        r.id === newReport.id ? { ...r, status: "in-progress" } : r
-                    ));
-                }, 3000);
-
-                setTimeout(() => {
-                    setReports(prev => {
-                        const updatedReports = prev.map(r =>
-                            r.id === newReport.id ? { ...r, status: "completed" } : r
-                        );
-                        saveReportsToStorage(updatedReports);
-                        return updatedReports;
-                    });
-                    addNotification(`Report ${newReport.reportId} completed!`, 'info');
-                }, 10000);
-            }
-
-            return newReport;
         } catch (error) {
             const message = error.message || 'Failed to submit report';
+            console.error('Submit report error:', error);
             setError({ type: 'report', message });
             addNotification(message, 'error');
             throw error;
@@ -339,85 +291,45 @@ export const AppProvider = ({ children }) => {
         }
     };
 
-    // Enhanced AI Analysis with caching
+    // AI Image Analysis using real API
     const analyzeImage = useCallback(async (imageFile, options = {}) => {
         setLoading(true);
         setError(null);
 
         try {
-            // Use real API service with caching
-            const analysis = await apiService.analyzeImage(imageFile, {
+            // Use real API service
+            const response = await apiService.analyzeImage(imageFile, {
+                location: options.location,
                 onProgress: options.onProgress,
                 signal: options.signal
             });
 
+            // Backend returns the analysis results directly
+            const analysis = {
+                wasteType: response.wasteType || 'Unknown',
+                wasteColor: response.wasteColor || '#6B7280',
+                wasteIcon: response.wasteIcon || '🗑️',
+                urgency: response.urgency || 'Medium',
+                urgencyColor: response.urgencyColor || '#F59E0B',
+                fillLevel: response.fillLevel || 0,
+                confidence: response.confidence || 0,
+                detectedItems: response.detectedItems || [],
+                recommendations: response.recommendations || [],
+                annotatedImageUrl: response.annotated_image_url || response.annotatedImageUrl,
+                timestamp: new Date()
+            };
+
             addNotification('Image analysis completed!', 'success');
             return analysis;
         } catch (error) {
-            console.warn('Image analysis failed, using mock data:', error);
-            addNotification('Using demo analysis data', 'warning');
-
-            // Fallback to mock analysis if API fails
-            return generateMockAnalysis();
+            console.error('Image analysis failed:', error);
+            const message = error.message || 'Image analysis failed';
+            setError({ type: 'analysis', message });
+            addNotification(message, 'error');
+            throw error;
         } finally {
             setLoading(false);
         }
-    }, []);
-
-    // Enhanced mock analysis with more realistic data
-    const generateMockAnalysis = useCallback(() => {
-        const wasteTypes = [
-            { type: "Mixed Waste", color: "#6B7280", icon: "🗑️" },
-            { type: "Organic", color: "#10B981", icon: "🍂" },
-            { type: "Plastic", color: "#3B82F6", icon: "🧴" },
-            { type: "Paper", color: "#F59E0B", icon: "📄" },
-            { type: "Glass", color: "#8B5CF6", icon: "🥃" },
-            { type: "Metal", color: "#EF4444", icon: "🔩" },
-            { type: "Electronic", color: "#6366F1", icon: "🔌" }
-        ];
-
-        const urgencyLevels = [
-            { level: "Low", color: "#10B981", priority: 1 },
-            { level: "Medium", color: "#F59E0B", priority: 2 },
-            { level: "High", color: "#EF4444", priority: 3 },
-            { level: "Critical", color: "#DC2626", priority: 4 }
-        ];
-
-        const selectedWaste = wasteTypes[Math.floor(Math.random() * wasteTypes.length)];
-        const selectedUrgency = urgencyLevels[Math.floor(Math.random() * urgencyLevels.length)];
-
-        return {
-            wasteType: selectedWaste.type,
-            wasteColor: selectedWaste.color,
-            wasteIcon: selectedWaste.icon,
-            urgency: selectedUrgency.level,
-            urgencyColor: selectedUrgency.color,
-            urgencyPriority: selectedUrgency.priority,
-            fillLevel: Math.floor(Math.random() * 100) + 1,
-            confidence: Math.floor(Math.random() * 20) + 80,
-            detectedItems: [
-                "Plastic bottles",
-                "Food containers",
-                "Paper waste",
-                "Glass bottles",
-                "Metal cans",
-                "Cardboard boxes"
-            ].slice(0, Math.floor(Math.random() * 4) + 2),
-            environmentalImpact: Math.floor(Math.random() * 10) + 1,
-            recommendations: [
-                "Schedule collection within 24 hours",
-                "Separate recyclable materials",
-                "Monitor for overflow",
-                "Contact local waste management department",
-                "Consider composting organic waste",
-                "Check for hazardous materials"
-            ].slice(0, Math.floor(Math.random() * 3) + 2),
-            healthRisk: Math.floor(Math.random() * 5) + 1,
-            estimatedWeight: Math.floor(Math.random() * 50) + 10,
-            estimatedVolume: (Math.random() * 5 + 1).toFixed(1) + ' m³',
-            processingTime: Math.floor(Math.random() * 120) + 30 + ' minutes',
-            timestamp: new Date()
-        };
     }, []);
 
     // Notification system
@@ -430,9 +342,9 @@ export const AppProvider = ({ children }) => {
             timestamp: new Date()
         };
 
-        setNotifications(prev => [notification, ...prev.slice(0, 4)]); // Keep last 5 notifications
+        setNotifications(prev => [notification, ...prev.slice(0, 4)]);
 
-        // Auto-remove notification after 5 seconds
+        // Auto-remove after 5 seconds
         setTimeout(() => {
             setNotifications(prev => prev.filter(n => n.id !== id));
         }, 5000);
@@ -459,7 +371,6 @@ export const AppProvider = ({ children }) => {
                 link.click();
                 URL.revokeObjectURL(url);
             }
-            // Add CSV export support here
             addNotification('Reports exported successfully!', 'success');
         } catch (error) {
             addNotification('Export failed', 'error');
@@ -489,6 +400,7 @@ export const AppProvider = ({ children }) => {
         setShowSuccessModal,
         submitReport,
         exportReports,
+        loadReports,
 
         // AI Analysis
         analyzeImage,

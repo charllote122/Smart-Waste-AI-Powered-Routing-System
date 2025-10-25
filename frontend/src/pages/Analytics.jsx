@@ -397,7 +397,7 @@ const Analytics = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
             <h4 className="text-sm font-semibold text-gray-600 mb-2">Average Confidence</h4>
-            <p className="text-3xl font-bold text-gray-900">{dashboardData.statistics.avgconfidence}%</p>
+            <p className="text-3xl font-bold text-gray-900">{dashboardData.statistics.avgconfidence/100}%</p>
             <p className="text-sm text-gray-600 mt-2">AI detection accuracy across all reports</p>
             <div className="mt-4 bg-gray-200 rounded-full h-2">
               <div 

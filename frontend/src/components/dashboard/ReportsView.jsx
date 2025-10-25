@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, MapPin, Clock, Monitor, Eye, Upload, RefreshCw, Filter, Download, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
-
 import apiService from '../../services/api';
 
 const ReportsView = () => {
@@ -10,6 +9,7 @@ const ReportsView = () => {
     const [filterStatus, setFilterStatus] = useState('');
     const [filterPriority, setFilterPriority] = useState('');
     const [refreshing, setRefreshing] = useState(false);
+    const [reportImages, setReportImages] = useState({}); // Store images by report ID
 
     useEffect(() => {
         fetchReports();
@@ -25,12 +25,44 @@ const ReportsView = () => {
             if (filterPriority) filters.priority = filterPriority;
             
             const response = await apiService.getReports(filters);
-            setReports(response.reports || []);
+            const fetchedReports = response.reports || [];
+            setReports(fetchedReports);
+            
+            // Fetch images for reports that have them
+            fetchedReports.forEach(report => {
+                if (report.has_image && report.id) {
+                    loadReportImage(report.id);
+                }
+            });
         } catch (err) {
             setError(err.message);
             console.error('Error fetching reports:', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadReportImage = async (reportId) => {
+        try {
+            const response = await apiService.getReportImage(reportId);
+            console.log('Image response for report', reportId, ':', response);
+            
+            if (response && response.image) {
+                // The backend returns base64 without the data URL prefix
+                // Add the prefix to make it displayable
+                const imageUrl = `data:image/jpeg;base64,${response.image}`;
+                setReportImages(prev => ({
+                    ...prev,
+                    [reportId]: imageUrl
+                }));
+            }
+        } catch (err) {
+            console.error(`Error loading image for report ${reportId}:`, err);
+            // Mark as failed so we don't keep trying
+            setReportImages(prev => ({
+                ...prev,
+                [reportId]: null
+            }));
         }
     };
 
@@ -256,24 +288,68 @@ const ReportsView = () => {
                             <div key={report.id} className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 hover:shadow-2xl transition-all duration-300">
                                 {/* Image Section */}
                                 {report.has_image && (
-                                    <div className="relative h-56 bg-gray-200">
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            <Upload className="w-16 h-16 text-gray-400" />
-                                        </div>
+                                    <div className="relative h-56 bg-gradient-to-br from-blue-50 to-indigo-100 overflow-hidden">
+                                        {reportImages[report.id] === undefined ? (
+                                            // Loading state
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <div className="text-center">
+                                                    <div className="inline-block animate-spin w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full mb-2"></div>
+                                                    <p className="text-sm text-gray-600 font-medium">Loading image...</p>
+                                                </div>
+                                            </div>
+                                        ) : reportImages[report.id] === null ? (
+                                            // Error state
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                                <div className="text-center">
+                                                    <AlertTriangle className="w-16 h-16 text-yellow-400 mx-auto mb-2" />
+                                                    <p className="text-sm text-gray-600 font-medium">Failed to load image</p>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            // Image loaded successfully
+                                            <img 
+                                                src={reportImages[report.id]} 
+                                                alt={`Report ${report.id}`}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    console.error('Image failed to render:', report.id);
+                                                    e.target.style.display = 'none';
+                                                    e.target.parentElement.innerHTML = '<div class="absolute inset-0 flex items-center justify-center"><div class="text-center"><svg class="w-16 h-16 text-red-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg><p class="text-sm text-gray-600 font-medium">Image render error</p></div></div>';
+                                                }}
+                                            />
+                                        )}
                                         <div className="absolute top-4 right-4 flex space-x-2">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getPriorityColor(report.priority)}`}>
+                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm bg-white/80 ${getPriorityColor(report.priority)}`}>
                                                 {report.priority} Priority
                                             </span>
                                         </div>
                                         
-                                        <div className="absolute bottom-4 right-4">
-                                            <button
-                                                onClick={() => downloadReportImage(report.id, report.image_name)}
-                                                className="bg-white/90 hover:bg-white p-2 rounded-full shadow-lg transition-colors"
-                                                title="Download Image"
-                                            >
-                                                <Download className="w-4 h-4 text-gray-700" />
-                                            </button>
+                                        {reportImages[report.id] && (
+                                            <div className="absolute bottom-4 right-4">
+                                                <button
+                                                    onClick={() => downloadReportImage(report.id, report.image_name)}
+                                                    className="bg-white/90 hover:bg-white p-2 rounded-full shadow-lg transition-colors"
+                                                    title="Download Image"
+                                                >
+                                                    <Download className="w-4 h-4 text-gray-700" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {!report.has_image && (
+                                    <div className="relative h-56 bg-gradient-to-br from-gray-100 to-gray-200">
+                                        <div className="absolute inset-0 flex items-center justify-center">
+                                            <div className="text-center">
+                                                <AlertTriangle className="w-16 h-16 text-gray-400 mx-auto mb-2" />
+                                                <p className="text-sm text-gray-500 font-medium">No Image</p>
+                                            </div>
+                                        </div>
+                                        <div className="absolute top-4 right-4">
+                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getPriorityColor(report.priority)}`}>
+                                                {report.priority} Priority
+                                            </span>
                                         </div>
                                     </div>
                                 )}
@@ -286,54 +362,41 @@ const ReportsView = () => {
                                             {getStatusIcon(report.status)}
                                             <span>{report.status}</span>
                                         </span>
-                                        <div className="flex items-center space-x-2 text-blue-600">
-                                            <span className="text-sm font-medium">{report.ai_confidence/100}% confident</span>
-                                        </div>
+                                        {report.ai_confidence > 0 && (
+                                            <div className="flex items-center space-x-2 text-blue-600">
+                                                <span className="text-sm font-medium">{report.ai_confidence/100}% AI</span>
+                                            </div>
+                                        )}
                                     </div>
 
-                                    <h3 className="font-bold text-xl mb-2 text-gray-900">{report.analysis.wasteType}</h3>
-                                    <p className="text-gray-600 text-sm mb-4">Fill Level: {report.analysis.fillLevel}%</p>
-
+                                    {/* Location */}
+                                    <h3 className="font-bold text-xl mb-2 text-gray-900">Report {report.id}</h3>
+                                    
                                     <div className="space-y-2 mb-4">
-                                        {report.camera && (
-                                            <div className="flex items-center text-gray-500 text-sm">
-                                                <Monitor className="w-4 h-4 mr-2" />
-                                                <span>{report.camera}</span>
-                                            </div>
-                                        )}
-
-                                        {report.location && (
-                                            <div className="flex items-center text-gray-500 text-sm">
-                                          <MapPin className="w-4 h-4 mr-2" />
-                                                <span>
-                                                    {report.location.lat.toFixed(4)}, {report.location.lng.toFixed(4)}
-                                                </span>
-                                            </div>
-                                        )}
+                                        <div className="flex items-center text-gray-600 text-sm">
+                                            <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
+                                            <span className="truncate">{report.location}</span>
+                                        </div>
 
                                         <div className="flex items-center text-gray-500 text-sm">
-                                            <Clock className="w-4 h-4 mr-2" />
-                                            <span>{report.timestamp.toLocaleDateString()} at {report.timestamp.toLocaleTimeString()}</span>
+                                            <Clock className="w-4 h-4 mr-2 flex-shrink-0" />
+                                            <span>{formatDate(report.reportedAt)}</span>
                                         </div>
-                                    </div>
-
-                                    {/* Timestamp */}
-                                    <div className="flex items-center text-gray-500 text-sm mb-4">
-                                        <Clock className="w-4 h-4 mr-2" />
-                                        <span>{formatDate(report.reportedAt)}</span>
                                     </div>
 
                                     {/* Action Buttons */}
                                     <div className="grid grid-cols-3 gap-2 mt-4">
                                         <button
                                             onClick={() => updateReportStatus(report.id, 'In Progress')}
-                                            className="px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-xs font-medium transition-colors"
+                                            disabled={report.status === 'In Progress'}
+                                            className="px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             In Progress
                                         </button>
                                         <button
                                             onClick={() => updateReportStatus(report.id, 'Resolved')}
-                                            className="px-3 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg text-xs font-medium transition-colors"
+                                            disabled={report.status === 'Resolved'}
+                                            className="px-3 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             Resolve
                                         </button>
