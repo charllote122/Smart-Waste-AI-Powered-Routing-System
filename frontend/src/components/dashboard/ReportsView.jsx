@@ -291,11 +291,29 @@ const ReportsView = () => {
                                         </div>
                                     </div>
 
-                                    {/* Location */}
-                                    <div className="mb-4">
-                                        <div className="flex items-center text-gray-700 mb-2">
-                                            <MapPin className="w-4 h-4 mr-2" />
-                                            <span className="font-semibold">{report.location}</span>
+                                    <h3 className="font-bold text-xl mb-2 text-gray-900">{report.analysis.wasteType}</h3>
+                                    <p className="text-gray-600 text-sm mb-4">Fill Level: {report.analysis.fillLevel}%</p>
+
+                                    <div className="space-y-2 mb-4">
+                                        {report.camera && (
+                                            <div className="flex items-center text-gray-500 text-sm">
+                                                <Monitor className="w-4 h-4 mr-2" />
+                                                <span>{report.camera}</span>
+                                            </div>
+                                        )}
+
+                                        {report.location && (
+                                            <div className="flex items-center text-gray-500 text-sm">
+                                          <MapPin className="w-4 h-4 mr-2" />
+                                                <span>
+                                                    {report.location.lat.toFixed(4)}, {report.location.lng.toFixed(4)}
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        <div className="flex items-center text-gray-500 text-sm">
+                                            <Clock className="w-4 h-4 mr-2" />
+                                            <span>{report.timestamp.toLocaleDateString()} at {report.timestamp.toLocaleTimeString()}</span>
                                         </div>
                                     </div>
 

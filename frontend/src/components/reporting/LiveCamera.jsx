@@ -135,8 +135,9 @@ const LiveCamera = () => {
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
-                videoRef.current.play(); // Ensure the video plays
+                await videoRef.current.play();
             }
+            
             setIsStreaming(true);
         } catch (error) {
             console.error("Camera access error:", error);
