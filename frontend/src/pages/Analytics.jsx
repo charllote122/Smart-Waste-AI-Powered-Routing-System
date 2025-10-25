@@ -167,6 +167,7 @@ const Analytics = () => {
     Critical: '#991b1b'
   };
 
+  // eslint-disable-next-line no-unused-vars
   const StatCard = ({ title, value, change, icon: Icon, trend, color }) => (
     <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
       <div className="flex items-center justify-between mb-4">
