@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://1ktn0531-5000.euw.devtunnels.ms/api';
 
 // Configuration
 const config = {
