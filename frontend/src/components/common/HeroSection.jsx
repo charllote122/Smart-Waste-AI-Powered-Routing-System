@@ -57,15 +57,22 @@ const HeroSection = () => {
                     </div>
 
                     {/* Features Grid */}
+                  
                     <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                       
+                         <Link to="/report">
+                        
                         <div className="group text-center p-6 rounded-2xl hover:bg-white hover:shadow-lg transition-all duration-300">
                             <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-lg">
                                 <Monitor className="w-10 h-10 text-blue-600" />
+                            
                             </div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-3">CCTV Monitoring</h3>
+                            <h3 className="text-xl font-bold text-gray-900 mb-3">CCTV Monitoring </h3>
                             <p className="text-gray-600">Automated reports with real-time location tracking</p>
                         </div>
 
+                        </Link>
+                        <Link to="/report">
                         <div className="group text-center p-6 rounded-2xl hover:bg-white hover:shadow-lg transition-all duration-300">
                             <div className="w-20 h-20 bg-gradient-to-br from-green-100 to-emerald-200 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-lg">
                                 <Eye className="w-10 h-10 text-green-600" />
@@ -73,7 +80,8 @@ const HeroSection = () => {
                             <h3 className="text-xl font-bold text-gray-900 mb-3">Live Camera</h3>
                             <p className="text-gray-600">Real-time analysis with location capture</p>
                         </div>
-
+                        </Link>
+                        <Link to="/report">
                         <div className="group text-center p-6 rounded-2xl hover:bg-white hover:shadow-lg transition-all duration-300">
                             <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-200 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform shadow-lg">
                                 <Upload className="w-10 h-10 text-purple-600" />
@@ -81,7 +89,9 @@ const HeroSection = () => {
                             <h3 className="text-xl font-bold text-gray-900 mb-3">Image Upload</h3>
                             <p className="text-gray-600">AI analysis with current location data</p>
                         </div>
+                        </Link>
                     </div>
+                    
                 </div>
             </div>
         </section>

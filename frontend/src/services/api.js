@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://1ktn0531-5000.euw.devtunnels.ms/api';
 
 // Configuration
 const config = {
@@ -122,15 +122,40 @@ const request = async (endpoint, options = {}) => {
     }
 };
 
-// Health check
+// ===========================
+// HEALTH & SYSTEM
+// ===========================
+
 export const healthCheck = async () => {
     return request('/health', { method: 'GET' });
 };
 
-// Single image analysis
+export const checkServerConnection = async () => {
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        await axiosInstance.get('/health', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        return true;
+    } catch (error) {
+        console.error('Server connection error:', error);
+        return false;
+    }
+};
+
+// ===========================
+// IMAGE ANALYSIS
+// ===========================
+
 export const analyzeImage = async (imageFile, options = {}) => {
     const formData = new FormData();
     formData.append('image', imageFile);
+    
+    // Add location if provided
+    if (options.location) {
+        formData.append('location', options.location);
+    }
 
     try {
         const response = await axiosInstance.post('/analyze', formData, {
@@ -155,7 +180,6 @@ export const analyzeImage = async (imageFile, options = {}) => {
     }
 };
 
-// Batch image analysis
 export const batchAnalyze = async (imageFiles, options = {}) => {
     const formData = new FormData();
     imageFiles.forEach((file) => {
@@ -185,68 +209,112 @@ export const batchAnalyze = async (imageFiles, options = {}) => {
     }
 };
 
-// Get annotated image URL
+// ===========================
+// CAMERA MANAGEMENT
+// ===========================
+
+export const addCamera = async (cameraData) => {
+    return request('/cameras', {
+        method: 'POST',
+        data: cameraData,
+    });
+};
+
+export const getCameras = async () => {
+    return request('/cameras', { method: 'GET' });
+};
+
+export const getCamera = async (cameraId) => {
+    return request(`/cameras/${cameraId}`, { method: 'GET' });
+};
+
+export const updateCamera = async (cameraId, cameraData) => {
+    return request(`/cameras/${cameraId}`, {
+        method: 'PUT',
+        data: cameraData,
+    });
+};
+
+export const deleteCamera = async (cameraId) => {
+    return request(`/cameras/${cameraId}`, { method: 'DELETE' });
+};
+
+// ===========================
+// REPORTS MANAGEMENT
+// ===========================
+
+export const createReport = async (reportData) => {
+    return request('/reports', {
+        method: 'POST',
+        data: reportData,
+    });
+};
+
+export const getReports = async (filters = {}) => {
+    const params = new URLSearchParams();
+    
+    if (filters.status) params.append('status', filters.status);
+    if (filters.priority) params.append('priority', filters.priority);
+    if (filters.limit) params.append('limit', filters.limit);
+    
+    const queryString = params.toString();
+    const endpoint = queryString ? `/reports?${queryString}` : '/reports';
+    
+    return request(endpoint, { method: 'GET' });
+};
+
+export const getReport = async (reportId, includeImage = false) => {
+    const params = includeImage ? '?include_image=true' : '';
+    return request(`/reports/${reportId}${params}`, { method: 'GET' });
+};
+
+export const updateReport = async (reportId, reportData) => {
+    return request(`/reports/${reportId}`, {
+        method: 'PUT',
+        data: reportData,
+    });
+};
+
+export const deleteReport = async (reportId) => {
+    return request(`/reports/${reportId}`, { method: 'DELETE' });
+};
+
+export const getReportImage = async (reportId) => {
+    return request(`/reports/${reportId}/image`, { method: 'GET' });
+};
+
+// ===========================
+// STATISTICS
+// ===========================
+
+export const getStatistics = async () => {
+    return request('/statistics', { method: 'GET' });
+};
+
+export const updateStatistics = async () => {
+    return request('/statistics/update', { method: 'POST' });
+};
+
+// ===========================
+// DASHBOARD
+// ===========================
+
+export const getDashboardSummary = async () => {
+    return request('/dashboard/summary', { method: 'GET' });
+};
+
+// ===========================
+// IMAGE UTILITIES
+// ===========================
+
 export const getAnnotatedImageUrl = (filename) => {
     return `${config.baseURL}/results/${filename}`;
 };
 
-// Get full backend URL for images
 export const getFullImageUrl = (filename) => {
     return `${config.baseURL}/results/${filename}`;
 };
 
-// Set authentication token
-export const setAuthToken = (token) => {
-    if (token) {
-        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    } else {
-        delete axiosInstance.defaults.headers.common['Authorization'];
-    }
-};
-
-// Clear authentication token
-export const clearAuthToken = () => {
-    delete axiosInstance.defaults.headers.common['Authorization'];
-};
-
-// Cancel all pending requests
-export const cancelAllRequests = (reason = 'Requests cancelled by user') => {
-    requestQueue.forEach((controller, requestId) => {
-        controller.abort(reason);
-        requestQueue.delete(requestId);
-    });
-};
-
-// Create abort controller for request cancellation
-export const createAbortController = () => {
-    return new AbortController();
-};
-
-// Check if server is reachable
-export const checkServerConnection = async () => {
-    try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-        await axiosInstance.get('/health', { signal: controller.signal });
-        clearTimeout(timeoutId);
-        return true;
-    } catch (error) {
-        alert('error', error);
-        return false;
-    }
-};
-
-// Get base URL
-export const getBaseUrl = () => config.baseURL;
-
-// Update base URL (useful for switching environments)
-export const setBaseUrl = (newUrl) => {
-    config.baseURL = newUrl;
-    axiosInstance.defaults.baseURL = newUrl;
-};
-
-// Download file helper
 export const downloadFile = async (url, filename) => {
     try {
         const response = await axiosInstance.get(url, {
@@ -264,7 +332,10 @@ export const downloadFile = async (url, filename) => {
     }
 };
 
-// Validate image file
+// ===========================
+// VALIDATION
+// ===========================
+
 export const validateImageFile = (file, maxSizeMB = 10) => {
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     const maxSizeBytes = maxSizeMB * 1024 * 1024;
@@ -284,7 +355,6 @@ export const validateImageFile = (file, maxSizeMB = 10) => {
     return true;
 };
 
-// Batch validate images
 export const validateImageFiles = (files, maxSizeMB = 10) => {
     const errors = [];
 
@@ -299,24 +369,134 @@ export const validateImageFiles = (files, maxSizeMB = 10) => {
     return errors;
 };
 
-// Export default object with all functions
+export const validateCameraData = (cameraData) => {
+    const errors = [];
+
+    if (!cameraData.name || cameraData.name.trim() === '') {
+        errors.push('Camera name is required');
+    }
+
+    if (!cameraData.ipaddress || cameraData.ipaddress.trim() === '') {
+        errors.push('IP address is required');
+    }
+
+    // Basic IP validation
+    const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+    if (cameraData.ipaddress && !ipRegex.test(cameraData.ipaddress)) {
+        errors.push('Invalid IP address format');
+    }
+
+    return errors;
+};
+
+export const validateReportData = (reportData) => {
+    const errors = [];
+
+    if (!reportData.location || reportData.location.trim() === '') {
+        errors.push('Location is required');
+    }
+
+    const validPriorities = ['Low', 'Medium', 'High', 'Critical'];
+    if (reportData.priority && !validPriorities.includes(reportData.priority)) {
+        errors.push(`Invalid priority. Must be one of: ${validPriorities.join(', ')}`);
+    }
+
+    const validStatuses = ['Pending', 'In Progress', 'Resolved', 'Cancelled'];
+    if (reportData.status && !validStatuses.includes(reportData.status)) {
+        errors.push(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+    }
+
+    return errors;
+};
+
+// ===========================
+// REQUEST MANAGEMENT
+// ===========================
+
+export const setAuthToken = (token) => {
+    if (token) {
+        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+        delete axiosInstance.defaults.headers.common['Authorization'];
+    }
+};
+
+export const clearAuthToken = () => {
+    delete axiosInstance.defaults.headers.common['Authorization'];
+};
+
+export const cancelAllRequests = (reason = 'Requests cancelled by user') => {
+    requestQueue.forEach((controller, requestId) => {
+        controller.abort(reason);
+        requestQueue.delete(requestId);
+    });
+};
+
+export const createAbortController = () => {
+    return new AbortController();
+};
+
+export const getBaseUrl = () => config.baseURL;
+
+export const setBaseUrl = (newUrl) => {
+    config.baseURL = newUrl;
+    axiosInstance.defaults.baseURL = newUrl;
+};
+
+// ===========================
+// EXPORT DEFAULT OBJECT
+// ===========================
+
 const apiService = {
-    request,
+    // Health & System
     healthCheck,
+    checkServerConnection,
+    
+    // Image Analysis
     analyzeImage,
     batchAnalyze,
+    
+    // Camera Management
+    addCamera,
+    getCameras,
+    getCamera,
+    updateCamera,
+    deleteCamera,
+    
+    // Reports Management
+    createReport,
+    getReports,
+    getReport,
+    updateReport,
+    deleteReport,
+    getReportImage,
+    
+    // Statistics
+    getStatistics,
+    updateStatistics,
+    
+    // Dashboard
+    getDashboardSummary,
+    
+    // Image Utilities
     getAnnotatedImageUrl,
     getFullImageUrl,
+    downloadFile,
+    
+    // Validation
+    validateImageFile,
+    validateImageFiles,
+    validateCameraData,
+    validateReportData,
+    
+    // Request Management
     setAuthToken,
     clearAuthToken,
     cancelAllRequests,
     createAbortController,
-    checkServerConnection,
     getBaseUrl,
     setBaseUrl,
-    downloadFile,
-    validateImageFile,
-    validateImageFiles,
+    request,
 };
 
 export default apiService;
