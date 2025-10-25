@@ -75,13 +75,13 @@ const Header = () => {
                         </Link>
 
                         {/* Status Indicators */}
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-4">
                             {/* Server Status Indicator */}
                             {showServerStatus && (
-                                <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium ${serverStatus === 'connected' ? 'bg-green-100 text-green-800' :
-                                        serverStatus === 'disconnected' ? 'bg-red-100 text-red-800' :
-                                            'bg-yellow-100 text-yellow-800'
-                                    }`}>
+                                <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium border ${serverStatus === 'connected' ? 'bg-green-100 text-green-800 border-green-300' :
+                                        serverStatus === 'disconnected' ? 'bg-red-100 text-red-800 border-red-300' :
+                                            'bg-yellow-100 text-yellow-800 border-yellow-300'
+                                    } transition duration-200 hover:shadow-md`}>
                                     <div className={`w-2 h-2 rounded-full ${serverStatus === 'connected' ? 'bg-green-500' :
                                             serverStatus === 'disconnected' ? 'bg-red-500' :
                                                 'bg-yellow-500 animate-pulse'
@@ -96,8 +96,8 @@ const Header = () => {
 
                             {/* Maps Status Indicator */}
                             {showMapsStatus && (
-                                <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium ${mapsStatus === 'available' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                                    }`} onClick={handleMapsOfflineClick}>
+                                <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium border ${mapsStatus === 'available' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-yellow-100 text-yellow-800 border-yellow-300'
+                                    } transition duration-200 hover:shadow-md`} onClick={handleMapsOfflineClick}>
                                     <MapPin className={`w-3 h-3 ${mapsStatus === 'available' ? 'text-green-500' : 'text-yellow-500'
                                         }`} />
                                     <span>
@@ -111,7 +111,7 @@ const Header = () => {
                     {/* Add links here */}
                     <div className="flex space-x-4 mt-4 md:mt-0">
                         <Link to="/report" className="px-4 py-2 border rounded-lg bg-gray-100 text-blue-600 hover:bg-gray-200 transition duration-200">Report</Link>
-                       
+
                         <button onClick={handleViewReportsClick} className="px-4 py-2 border rounded-lg bg-gray-100 text-blue-600 hover:bg-gray-200 transition duration-200">Reports</button>
                     <Link to="/analysis" className="px-4 py-2 border rounded-lg bg-gray-100 text-blue-600 hover:bg-gray-200 transition duration-200">Analysis</Link>
                     </div>
