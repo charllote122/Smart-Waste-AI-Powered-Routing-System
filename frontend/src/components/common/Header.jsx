@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Camera, User, LogOut, MapPin } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Camera, MapPin } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { validateMapsConfig } from '../../config/maps';
 
 const Header = () => {
     const { user, logout, setAuthMode, serverStatus } = useApp();
     const location = useLocation();
-    const currentPage = location.pathname;
+    const navigate = useNavigate();
     const [mapsStatus, setMapsStatus] = useState('checking');
     const [showServerStatus, setShowServerStatus] = useState(true);
     const [showMapsStatus, setShowMapsStatus] = useState(true);
@@ -21,9 +21,8 @@ const Header = () => {
                 setShowMapsStatus(false);
             }, 180000); // 3 minutes in milliseconds
 
-            return () => clearTimeout(timer); // Cleanup timer on unmount
+            return () => clearTimeout(timer);
         } else {
-            // Reset visibility if server or maps is offline
             setShowServerStatus(true);
             setShowMapsStatus(true);
         }
@@ -31,7 +30,6 @@ const Header = () => {
 
     const handleMapsOfflineClick = () => {
         if (mapsStatus === 'unavailable') {
-            // Request location permission logic
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
@@ -47,10 +45,19 @@ const Header = () => {
         }
     };
 
+    const handleViewReportsClick = () => {
+        const isAdminUser = window.confirm("Are you an admin?");
+        if (isAdminUser) {
+            navigate('/reports');
+        } else {
+            navigate('/');
+        }
+    };
+
     return (
         <header className="bg-white shadow-xl border-b sticky top-0 z-50 backdrop-blur-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap">
                     <div className="flex items-center space-x-4">
                         <Link to="/" className="flex items-center space-x-4 hover:opacity-80 transition-opacity">
                             <div className="relative">
@@ -101,8 +108,13 @@ const Header = () => {
                         </div>
                     </div>
 
-                    {/* Navigation & Auth remains the same */}
-                    {/* ... */}
+                    {/* Add links here */}
+                    <div className="flex space-x-4 mt-4 md:mt-0">
+                        <Link to="/report" className="px-4 py-2 border rounded-lg bg-gray-100 text-blue-600 hover:bg-gray-200 transition duration-200">Report</Link>
+                       
+                        <button onClick={handleViewReportsClick} className="px-4 py-2 border rounded-lg bg-gray-100 text-blue-600 hover:bg-gray-200 transition duration-200">Reports</button>
+                    <Link to="/analysis" className="px-4 py-2 border rounded-lg bg-gray-100 text-blue-600 hover:bg-gray-200 transition duration-200">Analysis</Link>
+                    </div>
                 </div>
             </div>
         </header>
